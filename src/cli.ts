@@ -9,6 +9,10 @@ import { LinkGraph } from "./models/model.ts"
 
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2))
 const isLinkGraph = Schema.is(LinkGraph)
+const FrontmatterJson = Schema.parseJson(Schema.Record({ key: Schema.String, value: Schema.Unknown }))
+const decodeFrontmatterJson = (input: string) => Schema.decodeUnknown(FrontmatterJson)(input).pipe(
+  Effect.mapError((error) => new MemoryError({ message: `Invalid --frontmatter JSON: ${error.message}` })),
+)
 
 const withMemory = <A, E, R>(effect: Effect.Effect<A, E, R | MemoryService>) =>
   Effect.gen(function* () {
@@ -107,7 +111,10 @@ const patch = Command.make("patch", {
 }, ({ path, frontmatter, body, bodyFile }) => withMemory(Effect.gen(function* () {
   const memory = yield* MemoryService
   const fs = yield* FileSystem.FileSystem
-  const frontmatterPatch = Option.map(frontmatter, (json) => JSON.parse(json) as Record<string, unknown>)
+  const frontmatterPatch = yield* Option.match(frontmatter, {
+    onNone: () => Effect.succeed(Option.none<Record<string, unknown>>()),
+    onSome: (json) => decodeFrontmatterJson(json).pipe(Effect.map(Option.some)),
+  })
   if (Option.isSome(body) && Option.isSome(bodyFile)) {
     return yield* new MemoryError({ message: "--body and --body-file are mutually exclusive" })
   }
@@ -126,7 +133,31 @@ const patch = Command.make("patch", {
   yield* printJson({ path: note.path, frontmatter: note.frontmatter, body: note.body })
 })))
 
-const command = Command.make("memo").pipe(Command.withSubcommands([validate, list, latest, find, query, values, links, recall, patch]))
+const create = Command.make("create", {
+  type: Args.text({ name: "type" }),
+  frontmatter: Options.text("frontmatter"),
+  body: Options.text("body").pipe(Options.optional),
+  bodyFile: Options.file("body-file").pipe(Options.optional),
+}, ({ type, frontmatter, body, bodyFile }) => withMemory(Effect.gen(function* () {
+  const memory = yield* MemoryService
+  const fs = yield* FileSystem.FileSystem
+  if (Option.isSome(body) && Option.isSome(bodyFile)) {
+    return yield* new MemoryError({ message: "--body and --body-file are mutually exclusive" })
+  }
+  const fm = yield* decodeFrontmatterJson(frontmatter)
+  const bodyFromFile = yield* Option.match(bodyFile, {
+    onNone: () => Effect.succeed(Option.none<string>()),
+    onSome: (file) => fs.readFileString(file, "utf8").pipe(
+      Effect.mapError((e) => new MemoryError({ message: `Failed to read body file: ${String(e)}` })),
+      Effect.map(Option.some),
+    ),
+  })
+  const bodyValue = Option.getOrUndefined(Option.orElse(body, () => bodyFromFile))
+  const note = yield* memory.create(type, fm, bodyValue)
+  yield* printJson({ path: note.path, frontmatter: note.frontmatter, body: note.body })
+})))
+
+const command = Command.make("memo").pipe(Command.withSubcommands([validate, list, latest, find, query, values, links, recall, patch, create]))
 
 Command.run(command, {
   name: "memo",

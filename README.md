@@ -42,8 +42,11 @@ search:                       # optional, informational
   fields: [title, tags]
   title: title
 body: |                       # required; default body for new notes
-  # {{title}}
+  # {title}
 ```
+
+Both `path.pattern` and `body` are interpolated with `{name}` placeholders
+resolved from the frontmatter provided at creation time.
 
 ### Field types
 
@@ -66,6 +69,19 @@ Each entry under `frontmatter.required` / `frontmatter.optional` is a `FieldSpec
 - `required` fields must be present and well-typed; `optional` fields are checked only when set.
 - Unknown frontmatter keys are allowed and preserved.
 
+## Creating notes
+
+```sh
+memo create book --frontmatter '{"title":"Dune","slug":"dune"}'
+```
+
+- Looks up the template by `<type>`.
+- Builds the file path by interpolating `path.pattern` with frontmatter values.
+- Validates the frontmatter against `frontmatter.required` / `optional`.
+- Refuses to overwrite an existing file.
+- Auto-injects `createdAt`, `updatedAt`, and `type`.
+- Body defaults to the interpolated `template.body`; override with `--body` or `--body-file` (those are used verbatim, no interpolation).
+
 ## Commands
 
 ```
@@ -78,4 +94,5 @@ memo values <field> [type]
 memo links [note]
 memo recall <path> [--save-body-to <file>]
 memo patch <path> [--frontmatter '<json>'] [--body '<text>' | --body-file <file>]
+memo create <type> --frontmatter '<json>' [--body '<text>' | --body-file <file>]
 ```

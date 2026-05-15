@@ -39,6 +39,21 @@ const decodeField = (template: TemplateDefinition, key: string, field: FieldSpec
     Effect.mapError((error) => new TemplateError({ message: `${template.type}.${key}: ${error.message}` })),
   )
 
+export const interpolate = (pattern: string, values: Readonly<Record<string, unknown>>): Effect.Effect<string, TemplateError> =>
+  Effect.gen(function* () {
+    const missing: string[] = []
+    const result = pattern.replace(/\{([a-zA-Z_][\w-]*)\}/g, (_, key: string) => {
+      const value = values[key]
+      if (value === undefined || value === null) {
+        missing.push(key)
+        return ""
+      }
+      return String(value)
+    })
+    if (missing.length > 0) return yield* new TemplateError({ message: `Missing placeholder(s): ${missing.join(", ")}` })
+    return result
+  })
+
 export const validateFrontmatter = (template: TemplateDefinition, data: Readonly<Record<string, unknown>>): Effect.Effect<void, TemplateError> =>
   Effect.gen(function* () {
     for (const [key, field] of Object.entries(template.frontmatter.required)) {

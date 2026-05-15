@@ -1,11 +1,11 @@
 import { Context, Effect, Layer, Schema } from "effect"
 import { FileSystem } from "@effect/platform"
-import { join, relative } from "node:path"
+import { dirname, join, relative } from "node:path"
 import { extractLinks, isAmbiguous, isResolved, isUnresolved, noteKey, resolveTarget } from "../models/links.ts"
 import { decodeMarkdown, encodeMarkdown, MarkdownError } from "../markdown.ts"
 import { IncomingLink, LinkGraph, MemoryNote, NoteLink, NoteLinks, SearchResult, TemplateDefinition, UnresolvedLink } from "../models/model.ts"
 import { SearchEngine } from "./SearchEngine.ts"
-import { loadTemplates, TemplateError, validateFrontmatter } from "../template.ts"
+import { interpolate, loadTemplates, TemplateError, validateFrontmatter } from "../template.ts"
 
 export class MemoryError extends Schema.TaggedError<MemoryError>()("MemoryError", {
   message: Schema.String,
@@ -43,6 +43,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<MemorySe
   readonly links: (path?: string) => Effect.Effect<LinkGraph | NoteLinks, MemoryError | MarkdownError | TemplateError>
   readonly recall: (path: string) => Effect.Effect<MemoryNote, MemoryError | MarkdownError | TemplateError>
   readonly patch: (path: string, frontmatterPatch?: Readonly<Record<string, unknown>>, body?: string) => Effect.Effect<MemoryNote, MemoryError | MarkdownError | TemplateError>
+  readonly create: (type: string, frontmatter: Readonly<Record<string, unknown>>, body?: string) => Effect.Effect<MemoryNote, MemoryError | MarkdownError | TemplateError>
 }>() {
   static readonly layer = (options: MemoryOptions) => Layer.effect(
     MemoryService,
@@ -192,7 +193,42 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<MemorySe
         return next
       })
 
-      return { templates, list, find, latest, query, values, links, recall, patch }
+      const create = Effect.fn("MemoryService.create")(function* (type: string, frontmatterInput: Readonly<Record<string, unknown>>, body?: string) {
+        const template = templates.get(type)
+        if (!template) return yield* new MemoryError({ message: `Unknown template type: ${type}` })
+        const now = new Date().toISOString()
+        const frontmatter = { createdAt: now, updatedAt: now, ...frontmatterInput, type }
+        const relativePath = yield* interpolate(template.path.pattern, frontmatter).pipe(
+          Effect.mapError((error) => new MemoryError({ message: `${template.path.pattern}: ${error.message}` })),
+        )
+        if (relativePath.split("/").includes("..")) {
+          return yield* new MemoryError({ message: `Path pattern produced unsafe path: ${relativePath}` })
+        }
+        const fullPath = join(options.rootDir, relativePath)
+        const exists = yield* fs.exists(fullPath).pipe(
+          Effect.mapError((error) => new MemoryError({ message: `Failed to stat ${fullPath}: ${String(error)}` })),
+        )
+        if (exists) return yield* new MemoryError({ message: `Note already exists: ${relativePath}` })
+        yield* validateFrontmatter(template, frontmatter).pipe(
+          Effect.mapError((error) => new MemoryError({ message: `${relativePath}: ${error.message}` })),
+        )
+        const noteBody = body !== undefined
+          ? body
+          : yield* interpolate(template.body, frontmatter).pipe(
+              Effect.mapError((error) => new MemoryError({ message: `${relativePath}: ${error.message}` })),
+            )
+        const note = new MemoryNote({ path: relativePath, frontmatter, body: noteBody })
+        const encoded = yield* encodeMarkdown(note)
+        yield* fs.makeDirectory(dirname(fullPath), { recursive: true }).pipe(
+          Effect.mapError((error) => new MemoryError({ message: `Failed to mkdir ${dirname(fullPath)}: ${String(error)}` })),
+        )
+        yield* fs.writeFileString(fullPath, encoded).pipe(
+          Effect.mapError((error) => new MemoryError({ message: `Failed to write ${fullPath}: ${String(error)}` })),
+        )
+        return note
+      })
+
+      return { templates, list, find, latest, query, values, links, recall, patch, create }
     }),
   ).pipe(Layer.provide(SearchEngine.layer))
 }
