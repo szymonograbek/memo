@@ -1,0 +1,28 @@
+{
+  "name": "memo",
+  "version": "0.1.0",
+  "description": "Markdown-based memory system with YAML frontmatter and wikilinks",
+  "type": "module",
+  "private": false,
+  "bin": {
+    "memo": "./src/cli.ts"
+  },
+  "scripts": {
+    "prepare": "effect-language-service patch",
+    "typecheck": "tsc --noEmit",
+    "start": "bun src/cli.ts"
+  },
+  "devDependencies": {
+    "@effect/language-service": "^0.86.1",
+    "@types/bun": "latest",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@effect/cli": "^0.75.1",
+    "@effect/platform-bun": "^0.89.0",
+    "effect": "^3.21.2",
+    "fuzzysort": "^3.1.0",
+    "gray-matter": "^4.0.3",
+    "yaml": "^2.9.0"
+  }
+}

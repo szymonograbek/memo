@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Effect-TS/language-service/refs/heads/main/schema.json",
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleDetection": "force",
+    "allowJs": true,
+    "types": ["bun"],
+
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    "incremental": true,
+    "sourceMap": true,
+
+    "plugins": [
+      {
+        "name": "@effect/language-service"
+      }
+    ],
+
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "include": ["src/**/*.ts"]
+}
