@@ -2,8 +2,8 @@ import { FileSystem } from "@effect/platform"
 import { Effect, Schema } from "effect"
 import { parse } from "yaml"
 import { join } from "node:path"
-import { TemplateDefinition } from "./model.ts"
-import type { FieldSpec } from "./model.ts"
+import { TemplateDefinition } from "./models/model.ts"
+import type { FieldSpec } from "./models/model.ts"
 
 export class TemplateError extends Schema.TaggedError<TemplateError>()("TemplateError", {
   message: Schema.String,

@@ -2,7 +2,7 @@ import { Effect, Schema } from "effect"
 import matter from "gray-matter"
 import { randomUUID } from "node:crypto"
 import { parse as parseYaml } from "yaml"
-import { MarkdownDocument, MemoryNote, TemplateDefinition } from "./model.ts"
+import { MarkdownDocument, MemoryNote, TemplateDefinition } from "./models/model.ts"
 import { validateFrontmatter } from "./template.ts"
 
 export class MarkdownError extends Schema.TaggedError<MarkdownError>()("MarkdownError", {

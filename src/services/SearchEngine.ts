@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Schema } from "effect"
 import fuzzysort from "fuzzysort"
-import { MemoryNote, SearchResult } from "./model.ts"
+import { MemoryNote, SearchResult } from "../models/model.ts"
 
 export class SearchEngine extends Context.Tag("@memory/SearchEngine")<SearchEngine, {
   readonly search: (notes: readonly MemoryNote[], query: string, limit: number, offset: number) => Effect.Effect<readonly SearchResult[]>

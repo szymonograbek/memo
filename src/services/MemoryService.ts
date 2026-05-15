@@ -1,11 +1,11 @@
 import { Context, Effect, Layer, Schema } from "effect"
 import { FileSystem } from "@effect/platform"
 import { join, relative } from "node:path"
-import { extractLinks, isAmbiguous, isResolved, isUnresolved, noteKey, resolveTarget } from "./links.ts"
-import { decodeMarkdown, encodeMarkdown, MarkdownError } from "./markdown.ts"
-import { IncomingLink, LinkGraph, MemoryNote, NoteLink, NoteLinks, SearchResult, TemplateDefinition, UnresolvedLink } from "./model.ts"
+import { extractLinks, isAmbiguous, isResolved, isUnresolved, noteKey, resolveTarget } from "../models/links.ts"
+import { decodeMarkdown, encodeMarkdown, MarkdownError } from "../markdown.ts"
+import { IncomingLink, LinkGraph, MemoryNote, NoteLink, NoteLinks, SearchResult, TemplateDefinition, UnresolvedLink } from "../models/model.ts"
 import { SearchEngine } from "./SearchEngine.ts"
-import { loadTemplates, TemplateError, validateFrontmatter } from "./template.ts"
+import { loadTemplates, TemplateError, validateFrontmatter } from "../template.ts"
 
 export class MemoryError extends Schema.TaggedError<MemoryError>()("MemoryError", {
   message: Schema.String,

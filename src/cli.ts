@@ -4,8 +4,8 @@ import { FileSystem } from "@effect/platform"
 import { BunContext, BunRuntime } from "@effect/platform-bun"
 import { Console, Effect, Option, Schema } from "effect"
 import { loadMemoryCliConfig } from "./config.ts"
-import { MemoryError, MemoryService } from "./MemoryService.ts"
-import { LinkGraph } from "./model.ts"
+import { MemoryError, MemoryService } from "./services/MemoryService.ts"
+import { LinkGraph } from "./models/model.ts"
 
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2))
 const isLinkGraph = Schema.is(LinkGraph)
