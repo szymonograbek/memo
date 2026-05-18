@@ -2,9 +2,9 @@ import { describe, expect, it } from "bun:test"
 
 import { Effect, Exit } from "effect"
 
-import { decodeMarkdown, encodeMarkdown, normalizeFrontmatter } from "../src/markdown/service.ts"
-import { Frontmatter, MemoryNote } from "../src/memory/data.ts"
-import { TemplateDefinition } from "../src/template/data.ts"
+import { Frontmatter, MemoryNote } from "../memory/data.ts"
+import { TemplateDefinition } from "../template/data.ts"
+import { decodeMarkdown, encodeMarkdown, normalizeFrontmatter } from "./service.ts"
 
 const book = TemplateDefinition.make({
   type: "book",

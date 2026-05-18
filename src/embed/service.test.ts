@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test"
 
 import { Effect } from "effect"
 
-import { Embedder } from "../../src/embed/service.ts"
-import { runTest } from "../setup/run.ts"
+import { runTest } from "../../test/setup/run.ts"
+import { Embedder } from "./service.ts"
 
 const cosine = (a: ReadonlyArray<number>, b: ReadonlyArray<number>) => {
   let dot = 0

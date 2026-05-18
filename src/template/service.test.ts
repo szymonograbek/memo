@@ -3,9 +3,9 @@ import { describe, expect, it } from "bun:test"
 import { BunContext } from "@effect/platform-bun"
 import { Cause, Effect, Exit, Option } from "effect"
 
-import { TemplateDefinition } from "../src/template/data.ts"
-import { interpolate, loadTemplates, validateFrontmatter } from "../src/template/service.ts"
-import { bookTemplate, makeWorkspace, noteTemplate } from "./helpers.ts"
+import { bookTemplate, makeWorkspace, noteTemplate } from "../../test/helpers.ts"
+import { TemplateDefinition } from "./data.ts"
+import { interpolate, loadTemplates, validateFrontmatter } from "./service.ts"
 
 const runExit = <A, E>(effect: Effect.Effect<A, E, never>) => Effect.runPromiseExit(effect)
 

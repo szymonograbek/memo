@@ -4,8 +4,6 @@ import { join } from "node:path"
 
 import { Effect, Exit } from "effect"
 
-import { LinkGraph, NoteLinks } from "../src/memory/data.ts"
-import { MemoryService } from "../src/memory/service.ts"
 import {
   bookTemplate,
   makeWorkspace,
@@ -13,7 +11,9 @@ import {
   runMemory,
   runMemoryExit,
   type Workspace,
-} from "./helpers.ts"
+} from "../../test/helpers.ts"
+import { LinkGraph, NoteLinks } from "./data.ts"
+import { MemoryService } from "./service.ts"
 
 const seedTemplates = (ws: Workspace) => {
   ws.writeTemplate("book", bookTemplate)

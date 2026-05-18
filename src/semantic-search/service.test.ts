@@ -3,10 +3,10 @@ import { unlinkSync } from "node:fs"
 
 import { Effect } from "effect"
 
-import { Database } from "../src/db/service.ts"
-import { SemanticSearch } from "../src/semantic-search/service.ts"
-import { makeWorkspace, noteTemplate } from "./helpers.ts"
-import { runWithSemantic } from "./setup/semantic.ts"
+import { makeWorkspace, noteTemplate } from "../../test/helpers.ts"
+import { runWithSemantic } from "../../test/setup/semantic.ts"
+import { Database } from "../db/service.ts"
+import { SemanticSearch } from "./service.ts"
 
 /** Build the YAML+body markdown a note template expects. */
 const noteFile = (slug: string, body: string) =>

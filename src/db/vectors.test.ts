@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test"
 
 import { Effect } from "effect"
 
-import { Database } from "../../src/db/service.ts"
-import { searchVectors, upsertChunkVector } from "../../src/db/vectors.ts"
-import { runTest } from "../setup/run.ts"
+import { runTest } from "../../test/setup/run.ts"
+import { Database } from "./service.ts"
+import { searchVectors, upsertChunkVector } from "./vectors.ts"
 
 const oneHot = (i: number, dim = 384) => Array.from({ length: dim }, (_, k) => (k === i ? 1 : 0))
 

@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test"
 
 import { Effect } from "effect"
 
-import { Database } from "../../src/db/service.ts"
-import { runTest } from "../setup/run.ts"
+import { runTest } from "../../test/setup/run.ts"
+import { Database } from "./service.ts"
 
 describe("Migrator", () => {
   test("applies all migrations", async () => {
