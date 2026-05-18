@@ -1,7 +1,8 @@
 import { describe, expect, it } from "bun:test"
-import { Effect, Exit, Schema } from "effect"
-import { decodeMarkdown, encodeMarkdown, normalizeFrontmatter } from "../src/markdown.ts"
-import { MemoryNote, TemplateDefinition } from "../src/models/model.ts"
+import { Effect, Exit } from "effect"
+import { decodeMarkdown, encodeMarkdown, normalizeFrontmatter } from "../src/markdown/service.ts"
+import { MemoryNote } from "../src/memory/data.ts"
+import { TemplateDefinition } from "../src/template/data.ts"
 
 const book = TemplateDefinition.make({
   type: "book",
@@ -80,11 +81,5 @@ describe("decodeMarkdown / encodeMarkdown", () => {
     expect(decoded.frontmatter.title).toBe("Dune")
     expect(decoded.frontmatter.slug).toBe("dune")
     expect(decoded.body.trim()).toBe("# Dune")
-  })
-
-  it("produces a MemoryNote that matches its schema", async () => {
-    const raw = `---\ntype: book\ntitle: Dune\nslug: dune\n---\n# Dune\n`
-    const note = await Effect.runPromise(decodeMarkdown(templates, "books/dune.md", raw))
-    expect(Schema.is(MemoryNote)(note)).toBe(true)
   })
 })

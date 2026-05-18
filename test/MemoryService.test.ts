@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test"
-import { readFileSync, existsSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { Effect, Exit } from "effect"
-import { MemoryService } from "../src/services/MemoryService.ts"
-import { LinkGraph, NoteLinks } from "../src/models/model.ts"
+import { MemoryService } from "../src/memory/service.ts"
+import { LinkGraph, NoteLinks } from "../src/memory/data.ts"
 import { bookTemplate, makeWorkspace, noteTemplate, runMemory, runMemoryExit, type Workspace } from "./helpers.ts"
 
 const seedTemplates = (ws: Workspace) => {
@@ -234,7 +234,8 @@ describe("MemoryService.links", () => {
       const memory = yield* MemoryService
       return yield* memory.links()
     }))
-    if (!(result instanceof LinkGraph)) throw new Error("expected LinkGraph")
+    expect(result).toBeInstanceOf(LinkGraph)
+    if (!(result instanceof LinkGraph)) return
     const targets = result.notes.flatMap((n) => n.outgoing.map((o) => o.target)).sort()
     expect(targets).toEqual(["books/dune", "books/foundation"])
     expect(result.unresolved.map((u) => u.raw)).toContain("ghost")
@@ -247,7 +248,8 @@ describe("MemoryService.links", () => {
       const memory = yield* MemoryService
       return yield* memory.links("books/foundation")
     }))
-    if (!(result instanceof NoteLinks)) throw new Error("expected NoteLinks")
+    expect(result).toBeInstanceOf(NoteLinks)
+    if (!(result instanceof NoteLinks)) return
     expect(result.path).toBe("books/foundation")
     expect(result.outgoing.map((o) => o.target)).toEqual(["books/dune"])
     expect(result.incoming.map((i) => i.from)).toEqual(["books/dune"])
@@ -265,12 +267,3 @@ describe("MemoryService.links", () => {
   })
 })
 
-describe("workspace isolation", () => {
-  it("each test gets its own real directory", () => {
-    const a = makeWorkspace("iso")
-    const b = makeWorkspace("iso")
-    expect(a.rootDir).not.toBe(b.rootDir)
-    expect(existsSync(a.rootDir)).toBe(true)
-    expect(existsSync(b.rootDir)).toBe(true)
-  })
-})

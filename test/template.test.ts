@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test"
-import { Effect, Exit } from "effect"
+import { Cause, Effect, Exit, Option } from "effect"
 import { BunContext } from "@effect/platform-bun"
-import { interpolate, loadTemplates, TemplateError, validateFrontmatter } from "../src/template.ts"
-import { TemplateDefinition } from "../src/models/model.ts"
+import { interpolate, loadTemplates, validateFrontmatter } from "../src/template/service.ts"
+import { TemplateDefinition } from "../src/template/data.ts"
 import { bookTemplate, makeWorkspace, noteTemplate } from "./helpers.ts"
 
 const runExit = <A, E>(effect: Effect.Effect<A, E, never>) => Effect.runPromiseExit(effect)
@@ -98,9 +98,11 @@ describe("loadTemplates", () => {
     )
     expect(Exit.isFailure(exit)).toBe(true)
     if (Exit.isFailure(exit)) {
-      const failure = exit.cause
-      // ensure the error is a TemplateError
-      expect(String(failure)).toContain(TemplateError.name)
+      const failure = Cause.failureOption(exit.cause)
+      expect(Option.isSome(failure)).toBe(true)
+      if (Option.isSome(failure)) {
+        expect(failure.value._tag).toBe("TemplateError")
+      }
     }
   })
 })

@@ -2,27 +2,48 @@
 import { Args, Command, Options } from "@effect/cli"
 import { FileSystem } from "@effect/platform"
 import { BunContext, BunRuntime } from "@effect/platform-bun"
-import { Console, Effect, Option } from "effect"
+import { Console, Effect, Layer, Option } from "effect"
+import { EmbedderInfra, InfraLive } from "./app/layers.ts"
 import { loadMemoryCliConfig } from "./config.ts"
-import { MemoryError, MemoryService } from "./services/MemoryService.ts"
-import { isLinkGraph } from "./models/model.ts"
-import { decodeFrontmatterJson } from "./markdown.ts"
+import { decodeFrontmatterJson } from "./markdown/service.ts"
+import { isLinkGraph, type Frontmatter } from "./memory/data.ts"
+import { MemoryService } from "./memory/service.ts"
+import { MemoryError } from "./memory/errors.ts"
+import { SemanticSearch } from "./semantic-search/service.ts"
 
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2))
 
-const withMemory = <A, E, R>(effect: Effect.Effect<A, E, R | MemoryService>) =>
-  Effect.gen(function* () {
-    const config = yield* loadMemoryCliConfig
-    return yield* effect.pipe(Effect.provide(MemoryService.layer({ rootDir: config.rootDir, templateDirs: [config.templateDir] })))
-  })
+const withMemory = Effect.fnUntraced(function* <A, E, R>(effect: Effect.Effect<A, E, R | MemoryService>) {
+  const config = yield* loadMemoryCliConfig
+  return yield* effect.pipe(Effect.provide(MemoryService.layer({ rootDir: config.rootDir, templateDirs: [config.templateDir] })))
+})
+
+const withSemantic = Effect.fnUntraced(function* <A, E, R>(
+  effect: Effect.Effect<A, E, R | SemanticSearch | MemoryService>,
+) {
+  const config = yield* loadMemoryCliConfig
+  // provideMerge so callers can still access MemoryService alongside
+  // SemanticSearch (e.g. to print frontmatter from raw notes).
+  const SemanticLive = SemanticSearch.layer.pipe(
+    Layer.provideMerge(
+      MemoryService.layer({
+        rootDir: config.rootDir,
+        templateDirs: [config.templateDir],
+      }),
+    ),
+    Layer.provideMerge(InfraLive),
+    Layer.provideMerge(EmbedderInfra),
+  )
+  return yield* effect.pipe(Effect.provide(SemanticLive))
+})
 
 const validate = Command.make("validate", {}, () => withMemory(Effect.gen(function* () {
   const memory = yield* MemoryService
   const notes = yield* memory.list()
-  const graph = yield* memory.links()
-  const unresolved = isLinkGraph(graph) ? graph.unresolved : []
+  const graph = yield* memory.links(undefined)
+  const unresolved: ReadonlyArray<{ readonly from: string; readonly raw: string }> = isLinkGraph(graph) ? graph.unresolved : []
   if (unresolved.length > 0) {
-    return yield* new MemoryError({ message: `Dead wikilinks: ${unresolved.map((link) => `${link.from} -> [[${link.raw}]]`).join(", ")}` })
+    return yield* new MemoryError({ reason: "ValidationFailed", message: `Dead wikilinks: ${unresolved.map((link) => `${link.from} -> [[${link.raw}]]`).join(", ")}` })
   }
   yield* printJson({ ok: true, notes: notes.length, templates: [...memory.templates.keys()], deadWikilinks: 0 })
 })))
@@ -33,6 +54,19 @@ const list = Command.make("list", { type: Args.text({ name: "type" }).pipe(Args.
   const typeValue = Option.getOrUndefined(type)
   const filtered = typeValue === undefined ? notes : notes.filter((note) => note.frontmatter.type === typeValue)
   yield* printJson(filtered.map((note) => ({ path: note.path, ...note.frontmatter })))
+})))
+
+const search = Command.make("search", {
+  query: Args.text({ name: "query" }),
+  limit: Options.integer("limit").pipe(Options.withDefault(20)),
+  offset: Options.integer("offset").pipe(Options.withDefault(0)),
+  type: Options.text("type").pipe(Options.optional),
+}, ({ query, limit, offset, type }) => withSemantic(Effect.gen(function* () {
+  const ss = yield* SemanticSearch
+  // Incremental: unchanged files are skipped via content hash.
+  yield* ss.reindex()
+  const results = yield* ss.search(query, limit, offset, Option.getOrUndefined(type))
+  yield* printJson(results)
 })))
 
 const find = Command.make("find", {
@@ -93,7 +127,10 @@ const recall = Command.make("recall", {
   yield* Option.match(saveBodyTo, {
     onNone: () => Effect.void,
     onSome: (file) => fs.writeFileString(file, note.body).pipe(
-      Effect.mapError((e) => new MemoryError({ message: `Failed to write body to ${file}: ${String(e)}` })),
+      Effect.catchTags({
+        SystemError: (cause) => Effect.die(cause),
+        BadArgument: (cause) => Effect.die(cause),
+      }),
     ),
   })
   yield* printJson({ path: note.path, frontmatter: note.frontmatter, body: note.body })
@@ -108,22 +145,25 @@ const patch = Command.make("patch", {
   const memory = yield* MemoryService
   const fs = yield* FileSystem.FileSystem
   const frontmatterPatch = yield* Option.match(frontmatter, {
-    onNone: () => Effect.succeed(Option.none<Record<string, unknown>>()),
+    onNone: () => Effect.succeed(Option.none<Frontmatter>()),
     onSome: (json) => decodeFrontmatterJson(json).pipe(Effect.map(Option.some)),
   })
   if (Option.isSome(body) && Option.isSome(bodyFile)) {
-    return yield* new MemoryError({ message: "--body and --body-file are mutually exclusive" })
+    return yield* new MemoryError({ reason: "ConflictingArguments", message: "--body and --body-file are mutually exclusive" })
   }
   const bodyFromFile = yield* Option.match(bodyFile, {
     onNone: () => Effect.succeed(Option.none<string>()),
     onSome: (file) => fs.readFileString(file, "utf8").pipe(
-      Effect.mapError((e) => new MemoryError({ message: `Failed to read body file: ${String(e)}` })),
+      Effect.catchTags({
+        SystemError: (cause) => Effect.die(cause),
+        BadArgument: (cause) => Effect.die(cause),
+      }),
       Effect.map(Option.some),
     ),
   })
   const bodyValue = Option.getOrUndefined(Option.orElse(body, () => bodyFromFile))
   if (Option.isNone(frontmatter) && bodyValue === undefined) {
-    return yield* new MemoryError({ message: "At least one of --frontmatter, --body, or --body-file must be provided" })
+    return yield* new MemoryError({ reason: "ConflictingArguments", message: "At least one of --frontmatter, --body, or --body-file must be provided" })
   }
   const note = yield* memory.patch(path, Option.getOrUndefined(frontmatterPatch), bodyValue)
   yield* printJson({ path: note.path, frontmatter: note.frontmatter, body: note.body })
@@ -138,13 +178,16 @@ const create = Command.make("create", {
   const memory = yield* MemoryService
   const fs = yield* FileSystem.FileSystem
   if (Option.isSome(body) && Option.isSome(bodyFile)) {
-    return yield* new MemoryError({ message: "--body and --body-file are mutually exclusive" })
+    return yield* new MemoryError({ reason: "ConflictingArguments", message: "--body and --body-file are mutually exclusive" })
   }
   const fm = yield* decodeFrontmatterJson(frontmatter)
   const bodyFromFile = yield* Option.match(bodyFile, {
     onNone: () => Effect.succeed(Option.none<string>()),
     onSome: (file) => fs.readFileString(file, "utf8").pipe(
-      Effect.mapError((e) => new MemoryError({ message: `Failed to read body file: ${String(e)}` })),
+      Effect.catchTags({
+        SystemError: (cause) => Effect.die(cause),
+        BadArgument: (cause) => Effect.die(cause),
+      }),
       Effect.map(Option.some),
     ),
   })
@@ -153,7 +196,7 @@ const create = Command.make("create", {
   yield* printJson({ path: note.path, frontmatter: note.frontmatter, body: note.body })
 })))
 
-const command = Command.make("memo").pipe(Command.withSubcommands([validate, list, latest, find, query, values, links, recall, patch, create]))
+const command = Command.make("memo").pipe(Command.withSubcommands([validate, list, latest, find, search, query, values, links, recall, patch, create]))
 
 Command.run(command, {
   name: "memo",

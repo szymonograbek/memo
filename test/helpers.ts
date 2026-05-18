@@ -2,8 +2,8 @@ import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { Effect, Exit, Layer } from "effect"
 import { BunContext } from "@effect/platform-bun"
-import { MemoryService } from "../src/services/MemoryService.ts"
-import { TemplateError } from "../src/template.ts"
+import { MemoryService } from "../src/memory/service.ts"
+import { TemplateError } from "../src/template/errors.ts"
 import { TESTING_ROOT } from "./setup.ts"
 
 let counter = 0

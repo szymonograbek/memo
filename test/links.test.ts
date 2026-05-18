@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test"
-import { extractLinks, isAmbiguous, isResolved, isUnresolved, noteKey, resolveTarget } from "../src/models/links.ts"
-import { MemoryNote } from "../src/models/model.ts"
+import { extractLinks, noteKey, resolveTarget } from "../src/links/service.ts"
+import { isAmbiguous, isResolved, isUnresolved } from "../src/links/data.ts"
+import { MemoryNote } from "../src/memory/data.ts"
 
 describe("extractLinks", () => {
   it("extracts simple wikilinks", () => {
