@@ -80,6 +80,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
       limit: number,
       offset: number,
       type: string | undefined,
+      threshold: number | undefined,
     ) => Effect.Effect<ReadonlyArray<SearchResult>, Errors>
     readonly latest: (
       type: string | undefined,
@@ -142,13 +143,14 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
           limit: number,
           offset: number,
           type: string | undefined,
+          threshold: number | undefined,
         ) {
           const notes = yield* list()
 
           const filtered =
             type === undefined ? notes : Arr.filter(notes, (note) => note.frontmatter.type === type)
 
-          return yield* search.search(filtered, query, limit, offset)
+          return yield* search.search(filtered, query, limit, offset, threshold)
         })
 
         const noteTime = (note: MemoryNote) => {

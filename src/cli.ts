@@ -10,9 +10,32 @@ import { decodeFrontmatterJson } from "./markdown/service.ts"
 import { isLinkGraph, type Frontmatter } from "./memory/data.ts"
 import { MemoryError } from "./memory/errors.ts"
 import { MemoryService } from "./memory/service.ts"
+import { SearchResult } from "./search/data.ts"
 import { SemanticSearch } from "./semantic-search/service.ts"
 
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2))
+
+const printSearchResults = Effect.fnUntraced(function* (
+  results: ReadonlyArray<SearchResult>,
+  recall: boolean,
+) {
+  if (!recall) return yield* printJson(results)
+
+  const memory = yield* MemoryService
+
+  const notes = yield* Effect.forEach(results, (result) =>
+    memory.recall(result.path).pipe(
+      Effect.map((note) => ({
+        path: note.path,
+        score: result.score,
+        frontmatter: note.frontmatter,
+        body: note.body,
+      })),
+    ),
+  )
+
+  return yield* printJson(notes)
+})
 
 const withMemory = Effect.fnUntraced(function* <A, E, R>(
   effect: Effect.Effect<A, E, R | MemoryService>,
@@ -100,17 +123,26 @@ const search = Command.make(
     limit: Options.integer("limit").pipe(Options.withDefault(20)),
     offset: Options.integer("offset").pipe(Options.withDefault(0)),
     type: Options.text("type").pipe(Options.optional),
+    threshold: Options.float("threshold").pipe(Options.optional),
+    recall: Options.boolean("recall"),
   },
-  ({ query, limit, offset, type }) =>
+  ({ query, limit, offset, type, threshold, recall }) =>
     withSemantic(
       Effect.gen(function* () {
         const ss = yield* SemanticSearch
 
         // Incremental: unchanged files are skipped via content hash.
         yield* ss.reindex()
-        const results = yield* ss.search(query, limit, offset, Option.getOrUndefined(type))
 
-        yield* printJson(results)
+        const results = yield* ss.search(
+          query,
+          limit,
+          offset,
+          Option.getOrUndefined(type),
+          Option.getOrUndefined(threshold),
+        )
+
+        yield* printSearchResults(results, recall)
       }),
     ),
 )
@@ -122,14 +154,23 @@ const find = Command.make(
     limit: Options.integer("limit").pipe(Options.withDefault(20)),
     offset: Options.integer("offset").pipe(Options.withDefault(0)),
     type: Options.text("type").pipe(Options.optional),
+    threshold: Options.float("threshold").pipe(Options.optional),
+    recall: Options.boolean("recall"),
   },
-  ({ query, limit, offset, type }) =>
+  ({ query, limit, offset, type, threshold, recall }) =>
     withMemory(
       Effect.gen(function* () {
         const memory = yield* MemoryService
-        const results = yield* memory.find(query, limit, offset, Option.getOrUndefined(type))
 
-        yield* printJson(results)
+        const results = yield* memory.find(
+          query,
+          limit,
+          offset,
+          Option.getOrUndefined(type),
+          Option.getOrUndefined(threshold),
+        )
+
+        yield* printSearchResults(results, recall)
       }),
     ),
 )
@@ -146,26 +187,6 @@ const latest = Command.make(
       Effect.gen(function* () {
         const memory = yield* MemoryService
         const notes = yield* memory.latest(Option.getOrUndefined(type), limit, offset)
-
-        yield* printJson(notes.map((note) => ({ path: note.path, ...note.frontmatter })))
-      }),
-    ),
-)
-
-const query = Command.make(
-  "query",
-  {
-    field: Args.text({ name: "field" }),
-    value: Args.text({ name: "value" }),
-    limit: Options.integer("limit").pipe(Options.withDefault(20)),
-    offset: Options.integer("offset").pipe(Options.withDefault(0)),
-    type: Options.text("type").pipe(Options.optional),
-  },
-  ({ field, value, limit, offset, type }) =>
-    withMemory(
-      Effect.gen(function* () {
-        const memory = yield* MemoryService
-        const notes = yield* memory.query(field, value, limit, offset, Option.getOrUndefined(type))
 
         yield* printJson(notes.map((note) => ({ path: note.path, ...note.frontmatter })))
       }),
@@ -333,7 +354,6 @@ const command = Command.make("memo").pipe(
     latest,
     find,
     search,
-    query,
     values,
     links,
     recall,

@@ -44,6 +44,7 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
       limit: number,
       offset: number,
       type: string | undefined,
+      threshold: number | undefined,
     ) => Effect.Effect<ReadonlyArray<SearchResult>, Errors>
   }
 >() {
@@ -147,6 +148,7 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
         limit: number,
         offset: number,
         type: string | undefined,
+        threshold: number | undefined,
       ) {
         return yield* provideDeps(
           Effect.gen(function* () {
@@ -182,11 +184,14 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
               const fm = JSON.parse(r.frontmatter) as Frontmatter
 
               if (type !== undefined && fm.type !== type) return []
+              const score = 1 - r.distance
+
+              if (threshold !== undefined && score < threshold) return []
 
               return [
                 new SearchResult({
                   path: r.path,
-                  score: 1 - r.distance,
+                  score,
                   frontmatter: fm,
                 }),
               ]

@@ -342,12 +342,30 @@ describe("MemoryService.list / latest / query / values / find", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.find("sandworm", 10, 0, undefined)
+        return yield* memory.find("sandworm", 10, 0, undefined, undefined)
       }),
     )
 
     expect(results.length).toBe(1)
     expect(results[0]?.path).toBe("books/dune.md")
+  })
+
+  it("find drops fuzzy matches below the threshold", async () => {
+    const ws = makeWorkspace("find-threshold")
+
+    seedTemplates(ws)
+    writeBook(ws, "dune", {}, "Sandworms of Arrakis")
+
+    const results = await runMemory(
+      ws,
+      Effect.gen(function* () {
+        const memory = yield* MemoryService
+
+        return yield* memory.find("sandworm", 10, 0, undefined, 0.8)
+      }),
+    )
+
+    expect(results).toEqual([])
   })
 })
 

@@ -130,7 +130,7 @@ describe("SemanticSearch.search", () => {
 
         yield* ss.reindex()
 
-        return yield* ss.search("Add a wide button, 40px big", 5, 0, undefined)
+        return yield* ss.search("Add a wide button, 40px big", 5, 0, undefined, undefined)
       }),
     )
 
@@ -149,7 +149,7 @@ describe("SemanticSearch.search", () => {
 
         yield* ss.reindex()
 
-        return yield* ss.search("alpha", 5, 0, undefined)
+        return yield* ss.search("alpha", 5, 0, undefined, undefined)
       }),
     )
 
@@ -176,7 +176,7 @@ describe("SemanticSearch.search", () => {
 
         yield* ss.reindex()
 
-        return yield* ss.search("topic alpha", 2, 0, undefined)
+        return yield* ss.search("topic alpha", 2, 0, undefined, undefined)
       }),
     )
 
@@ -196,8 +196,8 @@ describe("SemanticSearch.search", () => {
         const ss = yield* SemanticSearch
 
         yield* ss.reindex()
-        const first = yield* ss.search("pagination probe", 2, 0, undefined)
-        const second = yield* ss.search("pagination probe", 2, 2, undefined)
+        const first = yield* ss.search("pagination probe", 2, 0, undefined, undefined)
+        const second = yield* ss.search("pagination probe", 2, 2, undefined, undefined)
 
         return { first, second }
       }),
@@ -246,7 +246,7 @@ matching content for the search test
 
         yield* ss.reindex()
 
-        return yield* ss.search("matching content", 10, 0, "book")
+        return yield* ss.search("matching content", 10, 0, "book", undefined)
       }),
     )
 
@@ -272,13 +272,40 @@ matching content for the search test
 
         yield* ss.reindex()
 
-        return yield* ss.search("benefits of pure functions in code", 3, 0, undefined)
+        return yield* ss.search("benefits of pure functions in code", 3, 0, undefined, undefined)
       }),
     )
 
     for (let i = 1; i < results.length; i++) {
       expect(results[i]!.score).toBeLessThanOrEqual(results[i - 1]!.score)
     }
+  })
+
+  test("drops semantic matches below the threshold", async () => {
+    const ws = seedWorkspace("search-threshold")
+
+    ws.writeNote("notes/a.md", noteFile("a", "Functional programming favors pure functions"))
+
+    const results = await runWithSemantic(
+      ws,
+      Effect.gen(function* () {
+        const ss = yield* SemanticSearch
+
+        yield* ss.reindex()
+
+        const baseline = yield* ss.search("pure functions", 5, 0, undefined, undefined)
+        const top = baseline[0]
+
+        if (top === undefined) return { baseline, filtered: [] }
+
+        const filtered = yield* ss.search("pure functions", 5, 0, undefined, top.score + 0.000001)
+
+        return { baseline, filtered }
+      }),
+    )
+
+    expect(results.baseline.length).toBeGreaterThan(0)
+    expect(results.filtered).toEqual([])
   })
 })
 

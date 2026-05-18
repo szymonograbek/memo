@@ -12,11 +12,12 @@ export class SearchEngine extends Context.Tag("@memory/SearchEngine")<
       query: string,
       limit: number,
       offset: number,
+      threshold: number | undefined,
     ) => Effect.Effect<readonly SearchResult[]>
   }
 >() {
   static readonly layer = Layer.succeed(SearchEngine, {
-    search: (notes, query, limit, offset) =>
+    search: (notes, query, limit, offset, threshold) =>
       Effect.sync(() => {
         const results = notes.flatMap((note) => {
           const target = [
@@ -33,6 +34,8 @@ export class SearchEngine extends Context.Tag("@memory/SearchEngine")<
             typeof note.frontmatter.recalledTimes === "number" ? note.frontmatter.recalledTimes : 0
 
           const score = result.score + Math.min(recalled, 20) * 0.01
+
+          if (threshold !== undefined && score < threshold) return []
 
           return [new SearchResult({ path: note.path, score, frontmatter: note.frontmatter })]
         })
