@@ -3,7 +3,7 @@ import { describe, expect, it } from "bun:test"
 import { Effect, Exit } from "effect"
 
 import { decodeMarkdown, encodeMarkdown, normalizeFrontmatter } from "../src/markdown/service.ts"
-import { MemoryNote } from "../src/memory/data.ts"
+import { Frontmatter, MemoryNote } from "../src/memory/data.ts"
 import { TemplateDefinition } from "../src/template/data.ts"
 
 const book = TemplateDefinition.make({
@@ -82,7 +82,11 @@ describe("decodeMarkdown / encodeMarkdown", () => {
   it("round-trips via encodeMarkdown", async () => {
     const note = new MemoryNote({
       path: "books/dune.md",
-      frontmatter: normalizeFrontmatter({ type: "book", title: "Dune", slug: "dune" }),
+      frontmatter: normalizeFrontmatter({
+        type: "book",
+        title: "Dune",
+        slug: "dune",
+      }) as Frontmatter,
       body: "# Dune\n",
     })
     const encoded = await Effect.runPromise(encodeMarkdown(note))

@@ -30,7 +30,7 @@ const HeavyRuntime = ManagedRuntime.make(HeavyInfra)
  */
 export const runWithSemantic = <A, E>(
   workspace: Workspace,
-  effect: Effect.Effect<A, E, SemanticSearch | MemoryService | Database>,
+  effect: Effect.Effect<A, E, SemanticSearch | Database>,
 ): Promise<A> => {
   const PerTest = SemanticSearch.layer.pipe(
     Layer.provide(

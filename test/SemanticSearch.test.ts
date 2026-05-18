@@ -130,7 +130,7 @@ describe("SemanticSearch.search", () => {
 
         yield* ss.reindex()
 
-        return yield* ss.search("Add a wide button, 40px big", 5, 0)
+        return yield* ss.search("Add a wide button, 40px big", 5, 0, undefined)
       }),
     )
 
@@ -149,7 +149,7 @@ describe("SemanticSearch.search", () => {
 
         yield* ss.reindex()
 
-        return yield* ss.search("alpha", 5, 0)
+        return yield* ss.search("alpha", 5, 0, undefined)
       }),
     )
     const [hit] = results
@@ -174,7 +174,7 @@ describe("SemanticSearch.search", () => {
 
         yield* ss.reindex()
 
-        return yield* ss.search("topic alpha", 2, 0)
+        return yield* ss.search("topic alpha", 2, 0, undefined)
       }),
     )
 
@@ -193,8 +193,8 @@ describe("SemanticSearch.search", () => {
         const ss = yield* SemanticSearch
 
         yield* ss.reindex()
-        const first = yield* ss.search("pagination probe", 2, 0)
-        const second = yield* ss.search("pagination probe", 2, 2)
+        const first = yield* ss.search("pagination probe", 2, 0, undefined)
+        const second = yield* ss.search("pagination probe", 2, 2, undefined)
 
         return { first, second }
       }),
@@ -267,7 +267,7 @@ matching content for the search test
 
         yield* ss.reindex()
 
-        return yield* ss.search("benefits of pure functions in code", 3, 0)
+        return yield* ss.search("benefits of pure functions in code", 3, 0, undefined)
       }),
     )
 

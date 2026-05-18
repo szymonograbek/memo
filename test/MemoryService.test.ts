@@ -55,7 +55,7 @@ describe("MemoryService.create", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.create("book", { title: "Dune", slug: "dune" })
+        return yield* memory.create("book", { title: "Dune", slug: "dune" }, undefined)
       }),
     )
 
@@ -79,7 +79,7 @@ describe("MemoryService.create", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.create("book", { title: "Dune", slug: "dune" })
+        return yield* memory.create("book", { title: "Dune", slug: "dune" }, undefined)
       }),
     )
 
@@ -95,7 +95,7 @@ describe("MemoryService.create", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.create("widget", { title: "x", slug: "x" })
+        return yield* memory.create("widget", { title: "x", slug: "x" }, undefined)
       }),
     )
 
@@ -122,7 +122,7 @@ body: ""
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.create("escape", { slug: "x" })
+        return yield* memory.create("escape", { slug: "x" }, undefined)
       }),
     )
 
@@ -195,7 +195,7 @@ describe("MemoryService.list / latest / query / values / find", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.query("tags", "SCI-FI", 10, 0)
+        return yield* memory.query("tags", "SCI-FI", 10, 0, undefined)
       }),
     )
 
@@ -214,7 +214,7 @@ describe("MemoryService.list / latest / query / values / find", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.values("tags")
+        return yield* memory.values("tags", undefined)
       }),
     )
 
@@ -236,7 +236,7 @@ describe("MemoryService.list / latest / query / values / find", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.find("sandworm", 10, 0)
+        return yield* memory.find("sandworm", 10, 0, undefined)
       }),
     )
 
@@ -315,7 +315,7 @@ describe("MemoryService.recall / patch", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.patch("books/dune.md", { title: 42 })
+        return yield* memory.patch("books/dune.md", { title: 42 }, undefined)
       }),
     )
 
@@ -339,7 +339,7 @@ describe("MemoryService.links", () => {
       Effect.gen(function* () {
         const memory = yield* MemoryService
 
-        return yield* memory.links()
+        return yield* memory.links(undefined)
       }),
     )
 
