@@ -37,6 +37,7 @@ const writeBook = (
     lastRecalledAt: null,
     ...extra,
   }
+
   const yaml = Object.entries(fm)
     .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
     .join("\n")
@@ -90,6 +91,7 @@ describe("MemoryService.create", () => {
     const ws = makeWorkspace("create-unknown")
 
     seedTemplates(ws)
+
     const exit = await runMemoryExit(
       ws,
       Effect.gen(function* () {
@@ -117,6 +119,7 @@ frontmatter:
 body: ""
 `,
     )
+
     const exit = await runMemoryExit(
       ws,
       Effect.gen(function* () {
@@ -133,6 +136,7 @@ body: ""
     const ws = makeWorkspace("create-body")
 
     seedTemplates(ws)
+
     const note = await runMemory(
       ws,
       Effect.gen(function* () {
@@ -153,6 +157,7 @@ describe("MemoryService.list / latest / query / values / find", () => {
     seedTemplates(ws)
     writeBook(ws, "dune")
     writeBook(ws, "foundation")
+
     const notes = await runMemory(
       ws,
       Effect.gen(function* () {
@@ -172,6 +177,7 @@ describe("MemoryService.list / latest / query / values / find", () => {
     writeBook(ws, "a", { updatedAt: "2024-01-01" })
     writeBook(ws, "b", { updatedAt: "2024-03-01" })
     writeBook(ws, "c", { updatedAt: "2024-02-01" })
+
     const notes = await runMemory(
       ws,
       Effect.gen(function* () {
@@ -190,6 +196,7 @@ describe("MemoryService.list / latest / query / values / find", () => {
     seedTemplates(ws)
     writeBook(ws, "a", { tags: ["sci-fi", "classic"] })
     writeBook(ws, "b", { tags: ["fantasy"] })
+
     const notes = await runMemory(
       ws,
       Effect.gen(function* () {
@@ -209,6 +216,7 @@ describe("MemoryService.list / latest / query / values / find", () => {
     writeBook(ws, "a", { tags: ["sci-fi", "classic"] })
     writeBook(ws, "b", { tags: ["sci-fi"] })
     writeBook(ws, "c", { tags: ["fantasy"] })
+
     const values = await runMemory(
       ws,
       Effect.gen(function* () {
@@ -231,6 +239,7 @@ describe("MemoryService.list / latest / query / values / find", () => {
     seedTemplates(ws)
     writeBook(ws, "dune", {}, "Sandworms of Arrakis")
     writeBook(ws, "foundation", {}, "Psychohistory across the galaxy")
+
     const results = await runMemory(
       ws,
       Effect.gen(function* () {
@@ -310,6 +319,7 @@ describe("MemoryService.recall / patch", () => {
 
     seedTemplates(ws)
     writeBook(ws, "dune")
+
     const exit = await runMemoryExit(
       ws,
       Effect.gen(function* () {
@@ -334,6 +344,7 @@ describe("MemoryService.links", () => {
     const ws = makeWorkspace("links-graph")
 
     seedLinkedNotes(ws)
+
     const result = await runMemory(
       ws,
       Effect.gen(function* () {
@@ -356,6 +367,7 @@ describe("MemoryService.links", () => {
     const ws = makeWorkspace("links-note")
 
     seedLinkedNotes(ws)
+
     const result = await runMemory(
       ws,
       Effect.gen(function* () {
@@ -378,6 +390,7 @@ describe("MemoryService.links", () => {
 
     seedTemplates(ws)
     writeBook(ws, "dune")
+
     const exit = await runMemoryExit(
       ws,
       Effect.gen(function* () {

@@ -30,6 +30,7 @@ const withSemantic = Effect.fnUntraced(function* <A, E, R>(
   effect: Effect.Effect<A, E, R | SemanticSearch | MemoryService>,
 ) {
   const config = yield* loadMemoryCliConfig
+
   // provideMerge so callers can still access MemoryService alongside
   // SemanticSearch (e.g. to print frontmatter from raw notes).
   const SemanticLive = SemanticSearch.layer.pipe(
@@ -52,6 +53,7 @@ const validate = Command.make("validate", {}, () =>
       const memory = yield* MemoryService
       const notes = yield* memory.list()
       const graph = yield* memory.links(undefined)
+
       const unresolved: ReadonlyArray<{ readonly from: string; readonly raw: string }> =
         isLinkGraph(graph) ? graph.unresolved : []
 
@@ -80,6 +82,7 @@ const list = Command.make(
         const memory = yield* MemoryService
         const notes = yield* memory.list()
         const typeValue = Option.getOrUndefined(type)
+
         const filtered =
           typeValue === undefined
             ? notes
@@ -241,6 +244,7 @@ const patch = Command.make(
       Effect.gen(function* () {
         const memory = yield* MemoryService
         const fs = yield* FileSystem.FileSystem
+
         const frontmatterPatch = yield* Option.match(frontmatter, {
           onNone: () => Effect.succeed(Option.none<Frontmatter>()),
           onSome: (json) => decodeFrontmatterJson(json).pipe(Effect.map(Option.some)),
@@ -252,6 +256,7 @@ const patch = Command.make(
             message: "--body and --body-file are mutually exclusive",
           })
         }
+
         const bodyFromFile = yield* Option.match(bodyFile, {
           onNone: () => Effect.succeed(Option.none<string>()),
           onSome: (file) =>
@@ -263,6 +268,7 @@ const patch = Command.make(
               Effect.map(Option.some),
             ),
         })
+
         const bodyValue = Option.getOrUndefined(Option.orElse(body, () => bodyFromFile))
 
         if (Option.isNone(frontmatter) && bodyValue === undefined) {
@@ -299,6 +305,7 @@ const create = Command.make(
           })
         }
         const fm = yield* decodeFrontmatterJson(frontmatter)
+
         const bodyFromFile = yield* Option.match(bodyFile, {
           onNone: () => Effect.succeed(Option.none<string>()),
           onSome: (file) =>
@@ -310,6 +317,7 @@ const create = Command.make(
               Effect.map(Option.some),
             ),
         })
+
         const bodyValue = Option.getOrUndefined(Option.orElse(body, () => bodyFromFile))
         const note = yield* memory.create(type, fm, bodyValue)
 

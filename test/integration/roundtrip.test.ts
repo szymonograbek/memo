@@ -33,6 +33,7 @@ describe("end-to-end retrieval", () => {
             memories[i]!,
           ])
         }
+
         const rows = yield* db.all<{ id: number; ord: number; text: string }>(
           "SELECT id, ord, text FROM chunks WHERE path = ? ORDER BY ord",
           ["roundtrip.md"],
@@ -53,6 +54,7 @@ describe("end-to-end retrieval", () => {
           text: "Add a wide button, 40px big",
           kind: "query",
         })
+
         const hits = yield* searchVectors(q.vector, 3)
 
         return { hits, rows }

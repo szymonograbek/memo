@@ -58,6 +58,7 @@ describe("Embedder (transformers)", () => {
     const r = await runTest(
       Effect.gen(function* () {
         const emb = yield* Embedder
+
         const out = yield* emb.embedMany([
           { text: "Add a wide button, 40px big", kind: "query" },
           { text: "Use design tokens instead of magic numbers in styles", kind: "passage" },
@@ -67,6 +68,7 @@ describe("Embedder (transformers)", () => {
         return out
       }),
     )
+
     const [q, relevant, irrelevant] = r
 
     expect(q).toBeDefined()

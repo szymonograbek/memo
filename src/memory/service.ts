@@ -51,6 +51,7 @@ const listMdFiles: (
   dir: string,
 ) {
   const entries = yield* dieOnFsError(fs.readDirectory(dir))
+
   const nested = yield* Effect.all(
     entries.map(
       Effect.fnUntraced(function* (entry: string) {
@@ -143,6 +144,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
           type: string | undefined,
         ) {
           const notes = yield* list()
+
           const filtered =
             type === undefined ? notes : Arr.filter(notes, (note) => note.frontmatter.type === type)
 
@@ -155,6 +157,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
             note.frontmatter.updated ??
             note.frontmatter.date ??
             note.frontmatter.valid_from
+
           const time = Date.parse(String(value ?? ""))
 
           return Number.isNaN(time) ? 0 : time
@@ -188,6 +191,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
           const notes = yield* list()
           const expected = value.toLowerCase()
           const filtered = Arr.filter(notes, matchesType(type))
+
           const matched = Arr.filter(filtered, (note) => {
             const actual = note.frontmatter[field]
             const items = Array.isArray(actual) ? actual : [actual]
@@ -293,10 +297,12 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
         const recall = Effect.fn("MemoryService.recall")(function* (path: string) {
           const fullPath = join(options.rootDir, path)
           const note = yield* readNote(fullPath)
+
           const recalledTimes =
             typeof note.frontmatter.recalledTimes === "number"
               ? note.frontmatter.recalledTimes + 1
               : 1
+
           const next = new MemoryNote({
             path: note.path,
             body: note.body,
@@ -306,6 +312,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
               lastRecalledAt: new Date().toISOString(),
             },
           })
+
           const encoded = yield* encodeMarkdown(next)
 
           yield* dieOnFsError(fs.writeFileString(fullPath, encoded))
@@ -320,9 +327,11 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
         ) {
           const fullPath = join(options.rootDir, path)
           const note = yield* readNote(fullPath)
+
           const nextFrontmatter = frontmatterPatch
             ? { ...note.frontmatter, ...frontmatterPatch, updatedAt: new Date().toISOString() }
             : note.frontmatter
+
           const type = typeof nextFrontmatter.type === "string" ? nextFrontmatter.type : undefined
           const template = type !== undefined ? templates.get(type) : undefined
 
@@ -341,11 +350,13 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
             ),
           )
           const nextBody = body !== undefined ? body : note.body
+
           const next = new MemoryNote({
             path: note.path,
             body: nextBody,
             frontmatter: nextFrontmatter,
           })
+
           const encoded = yield* encodeMarkdown(next)
 
           yield* dieOnFsError(fs.writeFileString(fullPath, encoded))
@@ -367,6 +378,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
             })
           const now = new Date().toISOString()
           const frontmatter = { createdAt: now, updatedAt: now, ...frontmatterInput, type }
+
           const relativePath = yield* interpolate(template.path.pattern, frontmatter).pipe(
             Effect.mapError(
               (error) =>
@@ -400,6 +412,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
                 }),
             ),
           )
+
           const noteBody =
             body !== undefined
               ? body
@@ -412,6 +425,7 @@ export class MemoryService extends Context.Tag("@memory/MemoryService")<
                       }),
                   ),
                 )
+
           const note = new MemoryNote({ path: relativePath, frontmatter, body: noteBody })
           const encoded = yield* encodeMarkdown(note)
 

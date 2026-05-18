@@ -24,10 +24,12 @@ describe("vector storage", () => {
           "INSERT INTO chunks(path, ord, text) VALUES (?, 0, 'alpha'), (?, 1, 'beta')",
           ["vec-test.md", "vec-test.md"],
         )
+
         const ids = yield* db.all<{ id: number }>(
           "SELECT id FROM chunks WHERE path = ? ORDER BY ord",
           ["vec-test.md"],
         )
+
         const [a, b] = ids
 
         yield* upsertChunkVector(a!.id, oneHot(0))
@@ -37,6 +39,7 @@ describe("vector storage", () => {
         return { hits, ids }
       }),
     )
+
     const [a, b] = hits.ids
 
     expect(a).toBeDefined()

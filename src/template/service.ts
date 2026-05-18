@@ -49,6 +49,7 @@ export const interpolate = Effect.fnUntraced(function* (
   values: Readonly<Record<string, unknown>>,
 ) {
   const missing: Array<string> = []
+
   const result = pattern.replace(/\{([a-zA-Z_][\w-]*)\}/g, (_, key: string) => {
     const value = values[key]
 
@@ -130,6 +131,7 @@ export const loadTemplates = Effect.fnUntraced(function* (dirs: ReadonlyArray<st
           }),
       ),
     )
+
     const templateFiles = Arr.filter(names, (entry) => entry.endsWith(".memory-template.yaml"))
 
     for (const name of templateFiles) {

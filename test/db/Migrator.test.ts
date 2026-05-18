@@ -28,6 +28,7 @@ describe("Migrator", () => {
         )
       }),
     )
+
     const names = tables.map((t) => t.name)
 
     for (const required of ["notes", "chunks", "links", "meta"]) {
@@ -43,6 +44,7 @@ describe("Migrator", () => {
         return yield* db.all<{ name: string; type: string }>("PRAGMA table_info(chunks)")
       }),
     )
+
     const embedding = cols.find((c) => c.name === "embedding")
 
     expect(embedding).toBeDefined()

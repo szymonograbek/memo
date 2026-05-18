@@ -89,6 +89,7 @@ describe("decodeMarkdown / encodeMarkdown", () => {
       }) as Frontmatter,
       body: "# Dune\n",
     })
+
     const encoded = await Effect.runPromise(encodeMarkdown(note))
     const decoded = await Effect.runPromise(decodeMarkdown(templates, note.path, encoded))
 

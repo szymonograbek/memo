@@ -83,10 +83,12 @@ export const GeminiEmbedderLive = Layer.effect(
 
     const embedMany = (inputs: ReadonlyArray<EmbedInput>) => {
       const indices = inputs.map((_, i) => i)
+
       const queryIdx: ReadonlyArray<number> = Arr.filter(
         indices,
         (i) => inputs[i]!.kind === "query",
       )
+
       const passageIdx: ReadonlyArray<number> = Arr.filter(
         indices,
         (i) => inputs[i]!.kind === "passage",

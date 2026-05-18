@@ -36,6 +36,7 @@ describe("retrieval — semantic recall", () => {
           ],
           "paraphrase",
         )
+
         const q = yield* queryFor("Make sure cleanup runs even when an error happens")
         const hits = yield* searchVectors(q.vector, 3)
 
@@ -57,6 +58,7 @@ describe("retrieval — semantic recall", () => {
           ],
           "disambig",
         )
+
         const q = yield* queryFor("How do I iterate a list in Python code?")
         const hits = yield* searchVectors(q.vector, 3)
 
@@ -84,12 +86,14 @@ describe("retrieval — semantic recall", () => {
           ],
           "ordering",
         )
+
         const q = yield* queryFor("Best practices for writing clean component code")
         const hits = yield* searchVectors(q.vector, 6)
 
         return ordsOf(hits, seeded)
       }),
     )
+
     const top3 = result.slice(0, 3)
     const codeStyle = top3.filter((ord) => ord >= 0 && ord <= 2).length
 
@@ -108,6 +112,7 @@ describe("retrieval — semantic recall", () => {
           ],
           "specificity",
         )
+
         const q = yield* queryFor("How do I model variants with tagged types in TypeScript?")
         const hits = yield* searchVectors(q.vector, 3)
 
@@ -131,15 +136,19 @@ describe("retrieval — semantic recall", () => {
           ],
           "symmetry",
         )
+
         const emb = yield* Embedder
+
         const asQuery = yield* emb.embed({
           text: "How do I wire services together in Effect?",
           kind: "query",
         })
+
         const asPassage = yield* emb.embed({
           text: "How do I wire services together in Effect?",
           kind: "passage",
         })
+
         const a = yield* searchVectors(asQuery.vector, 1)
         const b = yield* searchVectors(asPassage.vector, 1)
 
@@ -162,6 +171,7 @@ describe("retrieval — semantic recall", () => {
           ],
           "typos",
         )
+
         const q = yield* queryFor("kuberntes pod netwroking basics")
         const hits = yield* searchVectors(q.vector, 3)
 

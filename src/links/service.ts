@@ -13,9 +13,11 @@ export const resolveTarget = (target: string, keys: ReadonlySet<string>): Resolv
 
   if (keys.has(normalized)) return new Resolved({ target: normalized })
   const suffix = `/${normalized}`
+
   const candidates = [...keys].filter(
     (key) => key.endsWith(suffix) || key.split("/").at(-1) === normalized,
   )
+
   const [candidate] = candidates
 
   if (candidate !== undefined && candidates.length === 1) return new Resolved({ target: candidate })

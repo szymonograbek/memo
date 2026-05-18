@@ -114,6 +114,7 @@ describe("loadTemplates", () => {
     const ws = makeWorkspace("templates-bad")
 
     ws.writeTemplate("broken", "type: book\nfrontmatter: not-a-struct")
+
     const exit = await Effect.runPromiseExit(
       loadTemplates([ws.templateDir]).pipe(Effect.provide(BunContext.layer)),
     )

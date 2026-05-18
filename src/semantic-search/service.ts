@@ -53,6 +53,7 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
       const db = yield* Database
       const emb = yield* Embedder
       const memory = yield* MemoryService
+
       // Helpers in db/vectors.ts pull Database from context; supply the
       // already-acquired client so the public methods report R = never.
       const provideDeps = <A, E, R>(eff: Effect.Effect<A, E, R>) =>
@@ -80,6 +81,7 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
           note.path,
           note.body,
         ])
+
         const row = yield* db.get<{ id: number }>(
           "SELECT id FROM chunks WHERE path = ? AND ord = 0",
           [note.path],
@@ -100,9 +102,11 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
         return yield* provideDeps(
           Effect.gen(function* () {
             const notes = yield* memory.list()
+
             const existing = yield* db.all<{ path: string; content_hash: string }>(
               "SELECT path, content_hash FROM notes",
             )
+
             const existingHash = new Map(existing.map((r) => [r.path, r.content_hash]))
             const currentPaths = new Set(notes.map((n) => n.path))
 

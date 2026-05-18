@@ -24,11 +24,14 @@ export class SearchEngine extends Context.Tag("@memory/SearchEngine")<
             note.body,
             ...Object.values(note.frontmatter).flat().map(String),
           ].join(" ")
+
           const result = fuzzysort.single(query, target)
 
           if (result === null) return []
+
           const recalled =
             typeof note.frontmatter.recalledTimes === "number" ? note.frontmatter.recalledTimes : 0
+
           const score = result.score + Math.min(recalled, 20) * 0.01
 
           return [new SearchResult({ path: note.path, score, frontmatter: note.frontmatter })]

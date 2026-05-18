@@ -152,6 +152,7 @@ describe("SemanticSearch.search", () => {
         return yield* ss.search("alpha", 5, 0, undefined)
       }),
     )
+
     const [hit] = results
 
     expect(hit).toBeDefined()
@@ -167,6 +168,7 @@ describe("SemanticSearch.search", () => {
     for (let i = 0; i < 5; i++) {
       ws.writeNote(`notes/n${i}.md`, noteFile(`n${i}`, `topic alpha ${i}`))
     }
+
     const results = await runWithSemantic(
       ws,
       Effect.gen(function* () {
@@ -187,6 +189,7 @@ describe("SemanticSearch.search", () => {
     for (let i = 0; i < 4; i++) {
       ws.writeNote(`notes/n${i}.md`, noteFile(`n${i}`, `pagination probe ${i}`))
     }
+
     const both = await runWithSemantic(
       ws,
       Effect.gen(function* () {
@@ -199,6 +202,7 @@ describe("SemanticSearch.search", () => {
         return { first, second }
       }),
     )
+
     const firstPaths = new Set(both.first.map((r) => r.path))
 
     for (const r of both.second) expect(firstPaths.has(r.path)).toBe(false)
@@ -234,6 +238,7 @@ slug: b
 matching content for the search test
 `,
     )
+
     const results = await runWithSemantic(
       ws,
       Effect.gen(function* () {
@@ -290,6 +295,7 @@ describe("SemanticSearch indexing side-effects", () => {
 
         yield* ss.reindex()
         const db = yield* Database
+
         const row = yield* db.get<{ frontmatter: string }>(
           "SELECT frontmatter FROM notes WHERE path = ?",
           ["notes/a.md"],
