@@ -1,5 +1,6 @@
-import { Effect, Layer, ManagedRuntime } from "effect"
 import { BunContext } from "@effect/platform-bun"
+import { Effect, Layer, ManagedRuntime } from "effect"
+
 import { InfraLive, EmbedderInfra } from "../../src/app/layers.ts"
 import { Database } from "../../src/db/service.ts"
 import { MemoryService } from "../../src/memory/service.ts"
@@ -43,8 +44,10 @@ export const runWithSemantic = <A, E>(
   return HeavyRuntime.runPromise(
     Effect.gen(function* () {
       const db = yield* Database
+
       yield* db.run("DELETE FROM chunks")
       yield* db.run("DELETE FROM notes")
+
       return yield* effect
     }).pipe(Effect.provide(PerTest)),
   )

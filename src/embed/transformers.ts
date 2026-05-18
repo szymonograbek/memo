@@ -1,5 +1,6 @@
-import { Effect, Layer } from "effect"
 import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers"
+import { Effect, Layer } from "effect"
+
 import { DimConfig, TransformersConfig } from "./config.ts"
 import { type EmbedInput, Embedding } from "./data.ts"
 import { EmbedError } from "./errors.ts"
@@ -13,10 +14,12 @@ export const TransformersEmbedderLive = Layer.scoped(
 
     const extractor = yield* Effect.acquireRelease(
       Effect.tryPromise({
-        try: () =>
-          pipeline("feature-extraction", model) as Promise<FeatureExtractionPipeline>,
+        try: () => pipeline("feature-extraction", model) as Promise<FeatureExtractionPipeline>,
         catch: (cause) =>
-          new EmbedError({ reason: "ModelLoadFailed", message: `failed to load model ${model}: ${String(cause)}` }),
+          new EmbedError({
+            reason: "ModelLoadFailed",
+            message: `failed to load model ${model}: ${String(cause)}`,
+          }),
       }),
       () => Effect.void,
     )
@@ -25,6 +28,7 @@ export const TransformersEmbedderLive = Layer.scoped(
       Effect.tryPromise({
         try: async () => {
           const out = await extractor(text, { pooling: "mean", normalize: true })
+
           return Array.from(out.data as Float32Array) as ReadonlyArray<number>
         },
         catch: (cause) =>
@@ -35,14 +39,11 @@ export const TransformersEmbedderLive = Layer.scoped(
         Effect.flatMap((vec) =>
           vec.length === dim
             ? Effect.succeed(vec)
-            : Effect.die(
-                `Transformers model produced dim ${vec.length}, EMBEDDING_DIM is ${dim}`,
-              ),
+            : Effect.die(`Transformers model produced dim ${vec.length}, EMBEDDING_DIM is ${dim}`),
         ),
       )
 
-    const make = (vector: ReadonlyArray<number>) =>
-      new Embedding({ vector, model, dim })
+    const make = (vector: ReadonlyArray<number>) => new Embedding({ vector, model, dim })
 
     return Embedder.of({
       model,

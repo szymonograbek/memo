@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs"
 import { dirname } from "node:path"
+
 import { createClient, type Client, type InValue } from "@libsql/client"
 import { Config, Context, Effect, Layer } from "effect"
 
@@ -18,21 +19,13 @@ export class Database extends Context.Tag("@memory/Database")<
   {
     readonly raw: Client
     readonly exec: (sql: string) => Effect.Effect<void>
-    readonly run: (
-      sql: string,
-      params?: ReadonlyArray<InValue>,
-    ) => Effect.Effect<void>
+    readonly run: (sql: string, params?: ReadonlyArray<InValue>) => Effect.Effect<void>
     readonly all: <T>(
       sql: string,
       params?: ReadonlyArray<InValue>,
     ) => Effect.Effect<ReadonlyArray<T>>
-    readonly get: <T>(
-      sql: string,
-      params?: ReadonlyArray<InValue>,
-    ) => Effect.Effect<T | null>
-    readonly transaction: <A, E, R>(
-      eff: Effect.Effect<A, E, R>,
-    ) => Effect.Effect<A, E, R>
+    readonly get: <T>(sql: string, params?: ReadonlyArray<InValue>) => Effect.Effect<T | null>
+    readonly transaction: <A, E, R>(eff: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
   }
 >() {
   /**
@@ -59,9 +52,11 @@ export class Database extends Context.Tag("@memory/Database")<
           // libSQL doesn't create intermediate dirs for `file:` URLs.
           // `:memory:` and `libsql://` URLs have no fs path to create.
           const filePath = url.startsWith("file:") ? url.slice("file:".length) : null
+
           if (filePath !== null && filePath !== ":memory:") {
             mkdirSync(dirname(filePath), { recursive: true })
           }
+
           return createClient({ url })
         }),
         (c) => Effect.sync(() => c.close()),
@@ -79,9 +74,7 @@ export class Database extends Context.Tag("@memory/Database")<
         tryDb("exec", () => client.executeMultiple(sql)).pipe(Effect.asVoid)
 
       const run = (sql: string, params: ReadonlyArray<InValue> = []) =>
-        tryDb("run", () => client.execute({ sql, args: [...params] })).pipe(
-          Effect.asVoid,
-        )
+        tryDb("run", () => client.execute({ sql, args: [...params] })).pipe(Effect.asVoid)
 
       const all = <T>(sql: string, params: ReadonlyArray<InValue> = []) =>
         tryDb("all", () => client.execute({ sql, args: [...params] })).pipe(
@@ -94,11 +87,14 @@ export class Database extends Context.Tag("@memory/Database")<
       const transaction = Effect.fnUntraced(function* <A, E, R>(eff: Effect.Effect<A, E, R>) {
         yield* run("BEGIN")
         const result = yield* Effect.either(eff)
+
         if (result._tag === "Left") {
           yield* run("ROLLBACK").pipe(Effect.ignore)
+
           return yield* Effect.fail(result.left)
         }
         yield* run("COMMIT")
+
         return result.right
       })
 

@@ -8,6 +8,7 @@ export type FrontmatterValue =
   | Date
   | ReadonlyArray<FrontmatterValue>
   | { readonly [key: string]: FrontmatterValue }
+
 export type Frontmatter = { readonly [key: string]: FrontmatterValue }
 
 export const FrontmatterValue: Schema.Schema<FrontmatterValue> = Schema.suspend(() =>
@@ -22,8 +23,10 @@ export const FrontmatterValue: Schema.Schema<FrontmatterValue> = Schema.suspend(
   ).annotations({ identifier: "FrontmatterValue" }),
 )
 
-export const Frontmatter = Schema.Record({ key: Schema.String, value: FrontmatterValue })
-  .annotations({ identifier: "Frontmatter" })
+export const Frontmatter = Schema.Record({
+  key: Schema.String,
+  value: FrontmatterValue,
+}).annotations({ identifier: "Frontmatter" })
 
 export class MemoryNote extends Schema.Class<MemoryNote>("MemoryNote")({
   path: Schema.String,

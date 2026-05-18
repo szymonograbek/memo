@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+
 import { Frontmatter } from "../memory/data.ts"
 
 export class SearchResult extends Schema.Class<SearchResult>("SearchResult")({

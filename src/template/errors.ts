@@ -6,6 +6,7 @@ export const TemplateErrorReason = Schema.Literal(
   "InvalidTemplateFile",
   "ReadFailed",
 ).annotations({ identifier: "TemplateErrorReason" })
+
 export type TemplateErrorReason = typeof TemplateErrorReason.Type
 
 export class TemplateError extends Schema.TaggedError<TemplateError>()("TemplateError", {

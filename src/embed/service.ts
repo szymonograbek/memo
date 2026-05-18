@@ -1,4 +1,5 @@
 import { Context, Effect } from "effect"
+
 import { EmbedInput, Embedding } from "./data.ts"
 import { EmbedError } from "./errors.ts"
 

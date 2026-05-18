@@ -1,4 +1,5 @@
 import { Effect, Layer } from "effect"
+
 import { ProviderConfig } from "./config.ts"
 import { GeminiEmbedderLive } from "./gemini.ts"
 import { TransformersEmbedderLive } from "./transformers.ts"

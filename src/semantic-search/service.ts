@@ -1,23 +1,20 @@
 import { createHash } from "node:crypto"
+
 import { Context, Effect, Layer } from "effect"
+
 import { Database } from "../db/service.ts"
 import { searchVectors, upsertChunkVector } from "../db/vectors.ts"
-import { Embedder } from "../embed/service.ts"
 import { EmbedError } from "../embed/errors.ts"
+import { Embedder } from "../embed/service.ts"
 import { MarkdownError } from "../markdown/errors.ts"
 import type { Frontmatter } from "../memory/data.ts"
-import { MemoryService } from "../memory/service.ts"
 import { MemoryError } from "../memory/errors.ts"
+import { MemoryService } from "../memory/service.ts"
 import { SearchResult } from "../search/data.ts"
 import { TemplateError } from "../template/errors.ts"
 import { SemanticSearchError } from "./errors.ts"
 
-type Errors =
-  | SemanticSearchError
-  | EmbedError
-  | MemoryError
-  | MarkdownError
-  | TemplateError
+type Errors = SemanticSearchError | EmbedError | MemoryError | MarkdownError | TemplateError
 
 export interface ReindexStats {
   readonly indexed: number
@@ -25,8 +22,7 @@ export interface ReindexStats {
   readonly removed: number
 }
 
-const hashBody = (body: string) =>
-  createHash("sha256").update(body).digest("hex")
+const hashBody = (body: string) => createHash("sha256").update(body).digest("hex")
 
 export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
   SemanticSearch,
@@ -71,48 +67,43 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
         readonly body: string
         readonly frontmatter: Readonly<Record<string, unknown>>
       }) {
-          const now = Date.now()
-          // Replace any prior row+chunks for this path (cascade clears chunks).
-          yield* db.run("DELETE FROM notes WHERE path = ?", [note.path])
-          yield* db.run(
-            `INSERT INTO notes(path, content_hash, mtime, frontmatter, body, indexed_at)
+        const now = Date.now()
+
+        // Replace any prior row+chunks for this path (cascade clears chunks).
+        yield* db.run("DELETE FROM notes WHERE path = ?", [note.path])
+        yield* db.run(
+          `INSERT INTO notes(path, content_hash, mtime, frontmatter, body, indexed_at)
              VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-              note.path,
-              hashBody(note.body),
-              now,
-              JSON.stringify(note.frontmatter),
-              note.body,
-              now,
-            ],
-          )
-          yield* db.run(
-            "INSERT INTO chunks(path, ord, text) VALUES (?, 0, ?)",
-            [note.path, note.body],
-          )
-          const row = yield* db.get<{ id: number }>(
-            "SELECT id FROM chunks WHERE path = ? AND ord = 0",
-            [note.path],
-          )
-          if (!row) {
-            return yield* new SemanticSearchError({
-              reason: "IndexInconsistent",
-              message: `failed to read back chunk id for ${note.path}`,
-            })
-          }
-          const e = yield* emb.embed({ text: note.body, kind: "passage" })
-          yield* upsertChunkVector(row.id, e.vector)
-        })
+          [note.path, hashBody(note.body), now, JSON.stringify(note.frontmatter), note.body, now],
+        )
+        yield* db.run("INSERT INTO chunks(path, ord, text) VALUES (?, 0, ?)", [
+          note.path,
+          note.body,
+        ])
+        const row = yield* db.get<{ id: number }>(
+          "SELECT id FROM chunks WHERE path = ? AND ord = 0",
+          [note.path],
+        )
+
+        if (!row) {
+          return yield* new SemanticSearchError({
+            reason: "IndexInconsistent",
+            message: `failed to read back chunk id for ${note.path}`,
+          })
+        }
+        const e = yield* emb.embed({ text: note.body, kind: "passage" })
+
+        yield* upsertChunkVector(row.id, e.vector)
+      })
 
       const reindex = Effect.fn("SemanticSearch.reindex")(function* () {
-        return yield* provideDeps(Effect.gen(function* () {
+        return yield* provideDeps(
+          Effect.gen(function* () {
             const notes = yield* memory.list()
             const existing = yield* db.all<{ path: string; content_hash: string }>(
               "SELECT path, content_hash FROM notes",
             )
-            const existingHash = new Map(
-              existing.map((r) => [r.path, r.content_hash]),
-            )
+            const existingHash = new Map(existing.map((r) => [r.path, r.content_hash]))
             const currentPaths = new Set(notes.map((n) => n.path))
 
             let indexed = 0
@@ -127,6 +118,7 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
 
             for (const note of notes) {
               const fresh = hashBody(note.body)
+
               if (existingHash.get(note.path) === fresh) {
                 unchanged += 1
                 continue
@@ -136,8 +128,9 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
             }
 
             return { indexed, unchanged, removed } satisfies ReindexStats
-          }))
-        })
+          }),
+        )
+      })
 
       interface Row {
         readonly path: string
@@ -151,49 +144,53 @@ export class SemanticSearch extends Context.Tag("@memory/SemanticSearch")<
         offset: number,
         type: string | undefined,
       ) {
-        return yield* provideDeps(Effect.gen(function* () {
-        const q = yield* emb.embed({ text: query, kind: "query" })
-        // Over-fetch by `offset` so pagination has material to drop.
-        const k = Math.max(limit + offset, 1)
-        const hits = yield* searchVectors(q.vector, k)
+        return yield* provideDeps(
+          Effect.gen(function* () {
+            const q = yield* emb.embed({ text: query, kind: "query" })
+            // Over-fetch by `offset` so pagination has material to drop.
+            const k = Math.max(limit + offset, 1)
+            const hits = yield* searchVectors(q.vector, k)
 
-        const rows = yield* Effect.forEach(hits, (h) =>
-          db
-            .get<{ path: string; frontmatter: string }>(
-              `SELECT c.path AS path, n.frontmatter AS frontmatter
+            const rows = yield* Effect.forEach(hits, (h) =>
+              db
+                .get<{ path: string; frontmatter: string }>(
+                  `SELECT c.path AS path, n.frontmatter AS frontmatter
                  FROM chunks c
                  JOIN notes  n ON n.path = c.path
                 WHERE c.id = ?`,
-              [h.id],
+                  [h.id],
+                )
+                .pipe(
+                  Effect.map((row): Row | null =>
+                    row
+                      ? {
+                          path: row.path,
+                          frontmatter: row.frontmatter,
+                          distance: h.distance,
+                        }
+                      : null,
+                  ),
+                ),
             )
-            .pipe(
-              Effect.map((row): Row | null =>
-                row
-                  ? {
-                      path: row.path,
-                      frontmatter: row.frontmatter,
-                      distance: h.distance,
-                    }
-                  : null,
-              ),
-            ),
-        )
 
-        const filtered = rows.flatMap((r): ReadonlyArray<SearchResult> => {
-          if (!r) return []
-          const fm = JSON.parse(r.frontmatter) as Frontmatter
-          if (type !== undefined && fm.type !== type) return []
-          return [
-            new SearchResult({
-              path: r.path,
-              score: 1 - r.distance,
-              frontmatter: fm,
-            }),
-          ]
-        })
+            const filtered = rows.flatMap((r): ReadonlyArray<SearchResult> => {
+              if (!r) return []
+              const fm = JSON.parse(r.frontmatter) as Frontmatter
+
+              if (type !== undefined && fm.type !== type) return []
+
+              return [
+                new SearchResult({
+                  path: r.path,
+                  score: 1 - r.distance,
+                  frontmatter: fm,
+                }),
+              ]
+            })
 
             return filtered.slice(offset, offset + limit)
-        }))
+          }),
+        )
       })
 
       return SemanticSearch.of({ reindex, search })

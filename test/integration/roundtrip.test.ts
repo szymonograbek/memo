@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test"
+
 import { Effect } from "effect"
+
 import { Database } from "../../src/db/service.ts"
-import { Embedder } from "../../src/embed/service.ts"
 import { searchVectors, upsertChunkVector } from "../../src/db/vectors.ts"
+import { Embedder } from "../../src/embed/service.ts"
 import { runTest } from "../setup/run.ts"
 
 describe("end-to-end retrieval", () => {
@@ -25,20 +27,23 @@ describe("end-to-end retrieval", () => {
         ]
 
         for (let i = 0; i < memories.length; i++) {
-          yield* db.run(
-            "INSERT INTO chunks(path, ord, text) VALUES (?, ?, ?)",
-            ["roundtrip.md", i, memories[i]!],
-          )
+          yield* db.run("INSERT INTO chunks(path, ord, text) VALUES (?, ?, ?)", [
+            "roundtrip.md",
+            i,
+            memories[i]!,
+          ])
         }
         const rows = yield* db.all<{ id: number; ord: number; text: string }>(
           "SELECT id, ord, text FROM chunks WHERE path = ? ORDER BY ord",
           ["roundtrip.md"],
         )
+
         yield* Effect.forEach(
           rows,
           (row) =>
             Effect.gen(function* () {
               const e = yield* emb.embed({ text: row.text, kind: "passage" })
+
               yield* upsertChunkVector(row.id, e.vector)
             }),
           { discard: true },
@@ -49,12 +54,15 @@ describe("end-to-end retrieval", () => {
           kind: "query",
         })
         const hits = yield* searchVectors(q.vector, 3)
+
         return { hits, rows }
       }),
     )
+
     expect(result.hits.length).toBeGreaterThan(0)
     const top = result.hits[0]!
     const winner = result.rows.find((r) => r.id === top.id)
+
     expect(winner?.ord).toBe(0) // index of design-tokens memory
   })
 })

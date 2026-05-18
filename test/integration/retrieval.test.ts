@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test"
+
 import { Effect } from "effect"
-import { Embedder } from "../../src/embed/service.ts"
+
 import { searchVectors } from "../../src/db/vectors.ts"
+import { Embedder } from "../../src/embed/service.ts"
 import { runTest } from "../setup/run.ts"
 import { seedMemories, type SeededChunk } from "../setup/seed.ts"
 
@@ -17,8 +19,7 @@ const topOrd = (
 const ordsOf = (
   hits: ReadonlyArray<{ id: number; distance: number }>,
   seeded: ReadonlyArray<SeededChunk>,
-): ReadonlyArray<number> =>
-  hits.map((h) => seeded.find((s) => s.id === h.id)?.ord ?? -1)
+): ReadonlyArray<number> => hits.map((h) => seeded.find((s) => s.id === h.id)?.ord ?? -1)
 
 const queryFor = (text: string) =>
   Effect.flatMap(Embedder, (emb) => emb.embed({ text, kind: "query" }))
@@ -37,9 +38,11 @@ describe("retrieval — semantic recall", () => {
         )
         const q = yield* queryFor("Make sure cleanup runs even when an error happens")
         const hits = yield* searchVectors(q.vector, 3)
+
         return topOrd(hits, seeded)
       }),
     )
+
     expect(result).toBe(0)
   })
 
@@ -56,9 +59,11 @@ describe("retrieval — semantic recall", () => {
         )
         const q = yield* queryFor("How do I iterate a list in Python code?")
         const hits = yield* searchVectors(q.vector, 3)
+
         return topOrd(hits, seeded)
       }),
     )
+
     expect(result).toBe(1)
   })
 
@@ -79,15 +84,15 @@ describe("retrieval — semantic recall", () => {
           ],
           "ordering",
         )
-        const q = yield* queryFor(
-          "Best practices for writing clean component code",
-        )
+        const q = yield* queryFor("Best practices for writing clean component code")
         const hits = yield* searchVectors(q.vector, 6)
+
         return ordsOf(hits, seeded)
       }),
     )
     const top3 = result.slice(0, 3)
     const codeStyle = top3.filter((ord) => ord >= 0 && ord <= 2).length
+
     expect(top3[0]).toBeLessThanOrEqual(2) // top-1 is code-style
     expect(codeStyle).toBeGreaterThanOrEqual(2) // ≥2/3 of top-3 are code-style
   })
@@ -103,13 +108,13 @@ describe("retrieval — semantic recall", () => {
           ],
           "specificity",
         )
-        const q = yield* queryFor(
-          "How do I model variants with tagged types in TypeScript?",
-        )
+        const q = yield* queryFor("How do I model variants with tagged types in TypeScript?")
         const hits = yield* searchVectors(q.vector, 3)
+
         return topOrd(hits, seeded)
       }),
     )
+
     expect(result).toBe(1)
   })
 
@@ -137,9 +142,11 @@ describe("retrieval — semantic recall", () => {
         })
         const a = yield* searchVectors(asQuery.vector, 1)
         const b = yield* searchVectors(asPassage.vector, 1)
+
         return { a: topOrd(a, seeded), b: topOrd(b, seeded) }
       }),
     )
+
     expect(result.a).toBe(0)
     expect(result.b).toBe(0)
   })
@@ -157,9 +164,11 @@ describe("retrieval — semantic recall", () => {
         )
         const q = yield* queryFor("kuberntes pod netwroking basics")
         const hits = yield* searchVectors(q.vector, 3)
+
         return topOrd(hits, seeded)
       }),
     )
+
     expect(result).toBe(0)
   })
 
@@ -172,9 +181,11 @@ describe("retrieval — semantic recall", () => {
         )
         const q = yield* queryFor("memory item")
         const hits = yield* searchVectors(q.vector, 3)
+
         return hits.length
       }),
     )
+
     expect(result).toBeLessThanOrEqual(3)
   })
 
@@ -191,9 +202,11 @@ describe("retrieval — semantic recall", () => {
         )
         const q = yield* queryFor("benefits of pure functions in code")
         const hits = yield* searchVectors(q.vector, 3)
+
         return hits.map((h) => h.distance)
       }),
     )
+
     for (let i = 1; i < result.length; i++) {
       expect(result[i]!).toBeGreaterThanOrEqual(result[i - 1]!)
     }

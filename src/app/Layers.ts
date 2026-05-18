@@ -1,8 +1,9 @@
-import { Layer } from "effect"
-import { BunContext } from "@effect/platform-bun"
 import { FetchHttpClient } from "@effect/platform"
-import { Database } from "../db/service.ts"
+import { BunContext } from "@effect/platform-bun"
+import { Layer } from "effect"
+
 import { MigratorLive } from "../db/migrator.ts"
+import { Database } from "../db/service.ts"
 import { EmbedderLive } from "../embed/live.ts"
 
 /** Persistence: DB + migrations. */

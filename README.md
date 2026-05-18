@@ -25,23 +25,23 @@ Templates live in `MEMORY_TEMPLATE_DIR` and must be named `<name>.memory-templat
 ### Shape
 
 ```yaml
-type: book                    # unique note type id (required)
-description: Reading notes    # optional, human-readable
+type: book # unique note type id (required)
+description: Reading notes # optional, human-readable
 path:
-  pattern: "books/{slug}.md"  # required; intended path layout for new notes
+  pattern: "books/{slug}.md" # required; intended path layout for new notes
 frontmatter:
-  required:                   # validated on `memo validate` / writes
+  required: # validated on `memo validate` / writes
     title: { type: string }
     started: { type: date }
-  optional:                   # validated only when present
+  optional: # validated only when present
     rating: { type: int, min: 1 }
     tags:
       type: array
       items: { type: string }
-search:                       # optional, informational
+search: # optional, informational
   fields: [title, tags]
   title: title
-body: |                       # required; default body for new notes
+body: | # required; default body for new notes
   # {title}
 ```
 
@@ -52,15 +52,15 @@ resolved from the frontmatter provided at creation time.
 
 Each entry under `frontmatter.required` / `frontmatter.optional` is a `FieldSpec`:
 
-| `type`     | Notes |
-| ---------- | ----- |
-| `string`   | Any string. |
-| `number`   | Any number. |
-| `int`      | Integer. With `min: N` requires `value >= N`. |
-| `boolean`  | `true` / `false`. |
-| `date`     | YAML date or ISO date string. |
-| `datetime` | YAML datetime or ISO datetime string. |
-| `enum`     | String constrained to `values: [...]`. |
+| `type`     | Notes                                                          |
+| ---------- | -------------------------------------------------------------- |
+| `string`   | Any string.                                                    |
+| `number`   | Any number.                                                    |
+| `int`      | Integer. With `min: N` requires `value >= N`.                  |
+| `boolean`  | `true` / `false`.                                              |
+| `date`     | YAML date or ISO date string.                                  |
+| `datetime` | YAML datetime or ISO datetime string.                          |
+| `enum`     | String constrained to `values: [...]`.                         |
 | `array`    | List of `items: <FieldSpec>` (defaults to `{ type: string }`). |
 
 ### Validation

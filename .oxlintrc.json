@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript"],
+  "jsPlugins": ["@stylistic/eslint-plugin"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "no-underscore-dangle": "off",
+    "no-shadow": "off",
+    // Require a blank line before return statements, and after
+    // blocks of const/let declarations — keeps function bodies readable.
+    "@stylistic/padding-line-between-statements": [
+      "warn",
+      // Always blank line before return
+      { "blankLine": "always", "prev": "*", "next": "return" },
+      // Always blank line after a block of variable declarations
+      { "blankLine": "always", "prev": ["const", "let"], "next": "*" },
+      // …but not between consecutive declarations themselves
+      { "blankLine": "any", "prev": ["const", "let"], "next": ["const", "let"] },
+      // Always blank line before if / for / while / try
+      { "blankLine": "always", "prev": "*", "next": ["if", "for", "while", "try", "switch"] },
+      // Always blank line between consecutive exports (e.g. export const Foo / export type Foo)
+      { "blankLine": "always", "prev": "export", "next": "export" }
+    ]
+  }
+}

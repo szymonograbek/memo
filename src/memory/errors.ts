@@ -9,6 +9,7 @@ export const MemoryErrorReason = Schema.Literal(
   "ValidationFailed",
   "ConflictingArguments",
 ).annotations({ identifier: "MemoryErrorReason" })
+
 export type MemoryErrorReason = typeof MemoryErrorReason.Type
 
 /**

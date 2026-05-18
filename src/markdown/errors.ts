@@ -6,6 +6,7 @@ export const MarkdownErrorReason = Schema.Literal(
   "UnknownTemplate",
   "EncodeFailed",
 ).annotations({ identifier: "MarkdownErrorReason" })
+
 export type MarkdownErrorReason = typeof MarkdownErrorReason.Type
 
 export class MarkdownError extends Schema.TaggedError<MarkdownError>()("MarkdownError", {

@@ -1,4 +1,5 @@
 import { Effect } from "effect"
+
 import { Database } from "./service.ts"
 
 /**
@@ -11,19 +12,15 @@ export const upsertChunkVector = Effect.fnUntraced(function* (
   vector: ReadonlyArray<number>,
 ) {
   const db = yield* Database
-  yield* db.run(
-    "UPDATE chunks SET embedding = vector32(?) WHERE id = ?",
-    [vec(vector), chunkId],
-  )
+
+  yield* db.run("UPDATE chunks SET embedding = vector32(?) WHERE id = ?", [vec(vector), chunkId])
 })
 
 export type VecHit = { readonly id: number; readonly distance: number }
 
-export const searchVectors = Effect.fnUntraced(function* (
-  query: ReadonlyArray<number>,
-  k: number,
-) {
+export const searchVectors = Effect.fnUntraced(function* (query: ReadonlyArray<number>, k: number) {
   const db = yield* Database
+
   return yield* db.all<VecHit>(
     `SELECT chunks.id AS id,
             vector_distance_cos(chunks.embedding, vector32(?)) AS distance

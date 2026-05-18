@@ -1,6 +1,7 @@
 import { Effect, Layer } from "effect"
-import { Database } from "./service.ts"
+
 import { DimConfig } from "../embed/config.ts"
+import { Database } from "./service.ts"
 
 type Migration = {
   readonly id: number
@@ -85,9 +86,7 @@ export const MigratorLive = Layer.effectDiscard(
         applied_at INTEGER NOT NULL
       )
     `)
-    const applied = yield* db.all<{ id: number }>(
-      "SELECT id FROM schema_migrations",
-    )
+    const applied = yield* db.all<{ id: number }>("SELECT id FROM schema_migrations")
     const seen = new Set(applied.map((r) => r.id))
 
     // libSQL's executeMultiple runs the script atomically; combining

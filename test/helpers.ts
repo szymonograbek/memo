@@ -1,7 +1,9 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
-import { Effect, Exit, Layer } from "effect"
+
 import { BunContext } from "@effect/platform-bun"
+import { Effect, Exit, Layer } from "effect"
+
 import { MemoryService } from "../src/memory/service.ts"
 import { TemplateError } from "../src/template/errors.ts"
 import { TESTING_ROOT } from "./setup.ts"
@@ -27,13 +29,16 @@ export const makeWorkspace = (label: string): Workspace => {
   const root = resolve(TESTING_ROOT, `${label}-${processTag}-${counter}`)
   const rootDir = join(root, "memory")
   const templateDir = join(root, "templates")
+
   mkdirSync(rootDir, { recursive: true })
   mkdirSync(templateDir, { recursive: true })
 
   const writeFile = (relativePath: string, contents: string) => {
     const target = join(root, relativePath)
+
     mkdirSync(dirname(target), { recursive: true })
     writeFileSync(target, contents)
+
     return target
   }
 
@@ -42,7 +47,8 @@ export const makeWorkspace = (label: string): Workspace => {
     rootDir,
     templateDir,
     writeNote: (path, contents) => writeFile(join("memory", path), contents),
-    writeTemplate: (name, contents) => writeFile(join("templates", `${name}.memory-template.yaml`), contents),
+    writeTemplate: (name, contents) =>
+      writeFile(join("templates", `${name}.memory-template.yaml`), contents),
     writeFile,
   }
 }
@@ -54,8 +60,10 @@ const memoryLayer = (workspace: Workspace) =>
     Layer.provide(BunContext.layer),
   )
 
-const provideMemory = <A, E>(workspace: Workspace, effect: Effect.Effect<A, E, MemoryService>): Effect.Effect<A, E | TemplateError> =>
-  effect.pipe(Effect.provide(memoryLayer(workspace)))
+const provideMemory = <A, E>(
+  workspace: Workspace,
+  effect: Effect.Effect<A, E, MemoryService>,
+): Effect.Effect<A, E | TemplateError> => effect.pipe(Effect.provide(memoryLayer(workspace)))
 
 /**
  * Run an Effect against a workspace, providing MemoryService backed by the
@@ -73,7 +81,8 @@ export const runMemory = <A, E>(
 export const runMemoryExit = <A, E>(
   workspace: Workspace,
   effect: Effect.Effect<A, E, MemoryService>,
-): Promise<Exit.Exit<A, E | TemplateError>> => Effect.runPromiseExit(provideMemory(workspace, effect))
+): Promise<Exit.Exit<A, E | TemplateError>> =>
+  Effect.runPromiseExit(provideMemory(workspace, effect))
 
 export const bookTemplate = `
 type: book

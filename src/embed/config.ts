@@ -11,9 +11,7 @@ export const DimConfig = Config.integer("EMBEDDING_DIM").pipe(Config.withDefault
 
 export const GeminiConfig = Config.all({
   apiKey: Config.redacted("GEMINI_API_KEY"),
-  model: Config.string("GEMINI_EMBEDDING_MODEL").pipe(
-    Config.withDefault("gemini-embedding-001"),
-  ),
+  model: Config.string("GEMINI_EMBEDDING_MODEL").pipe(Config.withDefault("gemini-embedding-001")),
 })
 
 export const TransformersConfig = Config.all({

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test"
-import { extractLinks, noteKey, resolveTarget } from "../src/links/service.ts"
+
 import { isAmbiguous, isResolved, isUnresolved } from "../src/links/data.ts"
+import { extractLinks, noteKey, resolveTarget } from "../src/links/service.ts"
 import { MemoryNote } from "../src/memory/data.ts"
 
 describe("extractLinks", () => {
@@ -26,11 +27,13 @@ describe("resolveTarget", () => {
 
   it("resolves exact match", () => {
     const result = resolveTarget("books/dune", keys)
+
     expect(isResolved(result) && result.target).toBe("books/dune")
   })
 
   it("strips .md suffix before resolving", () => {
     const result = resolveTarget("books/dune.md", keys)
+
     expect(isResolved(result) && result.target).toBe("books/dune")
   })
 
@@ -40,7 +43,9 @@ describe("resolveTarget", () => {
 
   it("returns ambiguous when basename matches multiple", () => {
     const result = resolveTarget("dune", keys)
+
     expect(isAmbiguous(result)).toBe(true)
+
     if (isAmbiguous(result)) {
       expect([...result.candidates].sort()).toEqual(["books/dune", "notes/dune"])
     }
@@ -48,6 +53,7 @@ describe("resolveTarget", () => {
 
   it("resolves unique basename match", () => {
     const result = resolveTarget("foundation", keys)
+
     expect(isResolved(result) && result.target).toBe("books/foundation")
   })
 })
@@ -55,6 +61,7 @@ describe("resolveTarget", () => {
 describe("noteKey", () => {
   it("strips .md suffix", () => {
     const note = new MemoryNote({ path: "books/dune.md", frontmatter: {}, body: "" })
+
     expect(noteKey(note)).toBe("books/dune")
   })
 })

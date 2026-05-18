@@ -1,7 +1,8 @@
 import { Effect } from "effect"
+
 import { Database } from "../../src/db/service.ts"
-import { Embedder } from "../../src/embed/service.ts"
 import { upsertChunkVector } from "../../src/db/vectors.ts"
+import { Embedder } from "../../src/embed/service.ts"
 
 export interface SeededChunk {
   readonly id: number
@@ -36,11 +37,7 @@ export const seedMemories = Effect.fnUntraced(function* (
   )
 
   for (let i = 0; i < texts.length; i++) {
-    yield* db.run("INSERT INTO chunks(path, ord, text) VALUES (?, ?, ?)", [
-      path,
-      i,
-      texts[i]!,
-    ])
+    yield* db.run("INSERT INTO chunks(path, ord, text) VALUES (?, ?, ?)", [path, i, texts[i]!])
   }
 
   const rows = yield* db.all<SeededChunk>(
@@ -52,6 +49,7 @@ export const seedMemories = Effect.fnUntraced(function* (
     rows,
     Effect.fnUntraced(function* (row: SeededChunk) {
       const e = yield* emb.embed({ text: row.text, kind: "passage" })
+
       yield* upsertChunkVector(row.id, e.vector)
     }),
     { discard: true },
@@ -61,4 +59,7 @@ export const seedMemories = Effect.fnUntraced(function* (
   )
 
   return rows
-}) as (texts: ReadonlyArray<string>, pathHint?: string) => Effect.Effect<ReadonlyArray<SeededChunk>, never, Database | Embedder>
+}) as (
+  texts: ReadonlyArray<string>,
+  pathHint?: string,
+) => Effect.Effect<ReadonlyArray<SeededChunk>, never, Database | Embedder>

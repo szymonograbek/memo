@@ -7,12 +7,14 @@ export interface FieldSpec {
   readonly min?: number | undefined
 }
 
-export const FieldSpec: Schema.Schema<FieldSpec> = Schema.suspend(() => Schema.Struct({
-  type: Schema.Literal("string", "number", "int", "boolean", "date", "datetime", "enum", "array"),
-  values: Schema.optional(Schema.Array(Schema.String)),
-  items: Schema.optional(FieldSpec),
-  min: Schema.optional(Schema.Number),
-}).annotations({ identifier: "FieldSpec" }))
+export const FieldSpec: Schema.Schema<FieldSpec> = Schema.suspend(() =>
+  Schema.Struct({
+    type: Schema.Literal("string", "number", "int", "boolean", "date", "datetime", "enum", "array"),
+    values: Schema.optional(Schema.Array(Schema.String)),
+    items: Schema.optional(FieldSpec),
+    min: Schema.optional(Schema.Number),
+  }).annotations({ identifier: "FieldSpec" }),
+)
 
 export class TemplateDefinition extends Schema.Class<TemplateDefinition>("TemplateDefinition")({
   type: Schema.String,
@@ -22,9 +24,11 @@ export class TemplateDefinition extends Schema.Class<TemplateDefinition>("Templa
     required: Schema.Record({ key: Schema.String, value: FieldSpec }),
     optional: Schema.optional(Schema.Record({ key: Schema.String, value: FieldSpec })),
   }).annotations({ identifier: "TemplateFrontmatterSpec" }),
-  search: Schema.optional(Schema.Struct({
-    fields: Schema.Array(Schema.String),
-    title: Schema.optional(Schema.String),
-  }).annotations({ identifier: "TemplateSearchSpec" })),
+  search: Schema.optional(
+    Schema.Struct({
+      fields: Schema.Array(Schema.String),
+      title: Schema.optional(Schema.String),
+    }).annotations({ identifier: "TemplateSearchSpec" }),
+  ),
   body: Schema.String,
 }) {}

@@ -1,5 +1,6 @@
-import { Array as Arr, Effect, Layer, Redacted, Schedule, Schema } from "effect"
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { Array as Arr, Effect, Layer, Redacted, Schedule, Schema } from "effect"
+
 import { DimConfig, GeminiConfig } from "./config.ts"
 import { type EmbedInput, Embedding } from "./data.ts"
 import { EmbedError } from "./errors.ts"
@@ -43,11 +44,13 @@ export const GeminiEmbedderLive = Layer.effect(
       const decode = Effect.fnUntraced(function* (res: HttpClientResponse.HttpClientResponse) {
         if (res.status >= 400) {
           const body = yield* res.text
+
           return yield* new EmbedError({
             reason: "ProviderRejected",
             message: `gemini ${res.status}: ${body.slice(0, 200)}`,
           })
         }
+
         return yield* HttpClientResponse.schemaBodyJson(BatchResponse)(res)
       })
 
@@ -57,12 +60,15 @@ export const GeminiEmbedderLive = Layer.effect(
         Effect.catchAll((cause) =>
           cause instanceof EmbedError
             ? Effect.fail(cause)
-            : Effect.fail(new EmbedError({ reason: "EmbeddingFailed", message: `gemini request failed: ${String(cause)}` })),
+            : Effect.fail(
+                new EmbedError({
+                  reason: "EmbeddingFailed",
+                  message: `gemini request failed: ${String(cause)}`,
+                }),
+              ),
         ),
         Effect.retry({
-          schedule: Schedule.exponential("500 millis").pipe(
-            Schedule.compose(Schedule.recurs(3)),
-          ),
+          schedule: Schedule.exponential("500 millis").pipe(Schedule.compose(Schedule.recurs(3))),
           while: (e) => /5\d\d/.test(e.message),
         }),
         // http.execute requires Scope; provide a fresh one per call.
@@ -70,18 +76,21 @@ export const GeminiEmbedderLive = Layer.effect(
       )
     }
 
-    const make = (vector: ReadonlyArray<number>) =>
-      new Embedding({ vector, model, dim })
+    const make = (vector: ReadonlyArray<number>) => new Embedding({ vector, model, dim })
 
     const embed = (input: EmbedInput) =>
-      callBatch([input.text], input.kind).pipe(
-        Effect.map((r) => make(r.embeddings[0]!.values)),
-      )
+      callBatch([input.text], input.kind).pipe(Effect.map((r) => make(r.embeddings[0]!.values)))
 
     const embedMany = (inputs: ReadonlyArray<EmbedInput>) => {
       const indices = inputs.map((_, i) => i)
-      const queryIdx: ReadonlyArray<number> = Arr.filter(indices, (i) => inputs[i]!.kind === "query")
-      const passageIdx: ReadonlyArray<number> = Arr.filter(indices, (i) => inputs[i]!.kind === "passage")
+      const queryIdx: ReadonlyArray<number> = Arr.filter(
+        indices,
+        (i) => inputs[i]!.kind === "query",
+      )
+      const passageIdx: ReadonlyArray<number> = Arr.filter(
+        indices,
+        (i) => inputs[i]!.kind === "passage",
+      )
 
       const chunkInto = (xs: ReadonlyArray<number>): ReadonlyArray<ReadonlyArray<number>> =>
         xs.length === 0 ? [] : Arr.chunksOf(xs, MAX_BATCH)
@@ -98,21 +107,21 @@ export const GeminiEmbedderLive = Layer.effect(
               kind,
             ).pipe(
               Effect.map((r) =>
-                r.embeddings.map(
-                  (e, j): readonly [number, Embedding] => [batch[j]!, make(e.values)],
-                ),
+                r.embeddings.map((e, j): readonly [number, Embedding] => [
+                  batch[j]!,
+                  make(e.values),
+                ]),
               ),
             ),
           { concurrency: 4 },
         ).pipe(Effect.map(Arr.flatten))
 
-      return Effect.zip(
-        runGroup(queryIdx, "query"),
-        runGroup(passageIdx, "passage"),
-      ).pipe(
+      return Effect.zip(runGroup(queryIdx, "query"), runGroup(passageIdx, "passage")).pipe(
         Effect.map(([a, b]) => {
           const out = new Array<Embedding>(inputs.length)
+
           for (const [i, e] of [...a, ...b]) out[i] = e
+
           return out as ReadonlyArray<Embedding>
         }),
       )

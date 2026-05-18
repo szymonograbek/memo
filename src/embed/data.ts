@@ -1,6 +1,7 @@
 import { Schema } from "effect"
 
 export const EmbedKind = Schema.Literal("query", "passage")
+
 export type EmbedKind = typeof EmbedKind.Type
 
 export class EmbedInput extends Schema.Class<EmbedInput>("EmbedInput")({

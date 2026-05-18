@@ -1,22 +1,21 @@
 {
   "name": "memo",
   "version": "0.1.0",
-  "description": "Markdown-based memory system with YAML frontmatter and wikilinks",
-  "type": "module",
   "private": false,
+  "description": "Markdown-based memory system with YAML frontmatter and wikilinks",
   "bin": {
     "memo": "./src/cli.ts"
   },
+  "type": "module",
   "scripts": {
-    "prepare": "effect-language-service patch",
+    "prepare": "effect-language-service patch && simple-git-hooks",
     "typecheck": "tsc --noEmit",
     "start": "bun src/cli.ts",
-    "test": "rm -rf testing && bun test; status=$?; rm -rf testing; exit $status"
-  },
-  "devDependencies": {
-    "@effect/language-service": "^0.86.1",
-    "@types/bun": "latest",
-    "typescript": "^6.0.3"
+    "test": "rm -rf testing && bun test; status=$?; rm -rf testing; exit $status",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt . --check"
   },
   "dependencies": {
     "@effect/cli": "^0.75.1",
@@ -27,5 +26,22 @@
     "fuzzysort": "^3.1.0",
     "gray-matter": "^4.0.3",
     "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@effect/language-service": "^0.86.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@types/bun": "latest",
+    "lint-staged": "^17.0.5",
+    "oxfmt": "^0.50.0",
+    "oxlint": "^1.65.0",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^6.0.3"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "bunx lint-staged"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": "oxlint --fix",
+    "*.{ts,tsx,js,jsx,json,jsonc,md,yaml,yml,toml}": "oxfmt"
   }
 }
