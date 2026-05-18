@@ -2,17 +2,13 @@
 import { Args, Command, Options } from "@effect/cli"
 import { FileSystem } from "@effect/platform"
 import { BunContext, BunRuntime } from "@effect/platform-bun"
-import { Console, Effect, Option, Schema } from "effect"
+import { Console, Effect, Option } from "effect"
 import { loadMemoryCliConfig } from "./config.ts"
 import { MemoryError, MemoryService } from "./services/MemoryService.ts"
-import { LinkGraph } from "./models/model.ts"
+import { isLinkGraph } from "./models/model.ts"
+import { decodeFrontmatterJson } from "./markdown.ts"
 
 const printJson = (value: unknown) => Console.log(JSON.stringify(value, null, 2))
-const isLinkGraph = Schema.is(LinkGraph)
-const FrontmatterJson = Schema.parseJson(Schema.Record({ key: Schema.String, value: Schema.Unknown }))
-const decodeFrontmatterJson = (input: string) => Schema.decodeUnknown(FrontmatterJson)(input).pipe(
-  Effect.mapError((error) => new MemoryError({ message: `Invalid --frontmatter JSON: ${error.message}` })),
-)
 
 const withMemory = <A, E, R>(effect: Effect.Effect<A, E, R | MemoryService>) =>
   Effect.gen(function* () {

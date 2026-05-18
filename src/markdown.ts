@@ -13,6 +13,13 @@ const FrontmatterWithType = Schema.Struct({
   type: Schema.String,
 })
 
+const FrontmatterJson = Schema.parseJson(Schema.Record({ key: Schema.String, value: Schema.Unknown }))
+
+export const decodeFrontmatterJson = (input: string) =>
+  Schema.decodeUnknown(FrontmatterJson)(input).pipe(
+    Effect.mapError((error) => new MarkdownError({ message: `Invalid frontmatter JSON: ${error.message}` })),
+  )
+
 type ParsedMatter = {
   readonly data: unknown
   readonly content: string

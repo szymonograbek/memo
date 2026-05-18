@@ -75,3 +75,5 @@ export class LinkGraph extends Schema.Class<LinkGraph>("LinkGraph")({
   notes: Schema.Array(NoteLinks),
   unresolved: Schema.Array(UnresolvedLink),
 }) {}
+
+export const isLinkGraph = Schema.is(LinkGraph)
