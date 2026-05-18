@@ -1,15 +1,26 @@
 # memo
 
-Markdown-based memory system with YAML frontmatter, wikilinks, templates, fuzzy search, and semantic search. Effect-based CLI running on Bun.
+Markdown-based memory system with YAML frontmatter, wikilinks, templates, fuzzy search, and semantic search.
 
 ## Install
 
 ```sh
-bun install
-bun link
+npm install -g memo
 ```
 
-`memo` is now available globally.
+`memo` is now available globally. For local development use `bun install` and `bun run dev`.
+
+## JavaScript API
+
+```ts
+import Memory from "memo"
+
+const memory = Memory.fromEnv()
+const notes = await memory.find("Dune", { limit: 10 })
+const note = await memory.recall(notes[0].path)
+```
+
+The API returns Promises and plain JavaScript objects; consumers do not need to use Effect.
 
 ## Configuration
 

@@ -4,13 +4,29 @@
   "private": false,
   "description": "Markdown-based memory system with YAML frontmatter and wikilinks",
   "bin": {
-    "memo": "./src/cli.ts"
+    "memo": "./dist/cli.js"
   },
+  "files": [
+    "dist/**/*.js",
+    "dist/client.d.ts",
+    "README.md"
+  ],
   "type": "module",
+  "main": "./dist/client.js",
+  "types": "./dist/client.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    }
+  },
   "scripts": {
     "prepare": "effect-language-service patch && simple-git-hooks",
     "typecheck": "tsc --noEmit",
-    "start": "bun src/cli.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "bun run build",
+    "start": "node dist/cli.js",
+    "dev": "bun src/cli.ts",
     "test": "rm -rf testing && bun test; status=$?; rm -rf testing; exit $status",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
@@ -19,7 +35,7 @@
   },
   "dependencies": {
     "@effect/cli": "^0.75.1",
-    "@effect/platform-bun": "^0.89.0",
+    "@effect/platform-node": "^0.106.0",
     "@huggingface/transformers": "^4.2.0",
     "@libsql/client": "^0.17.3",
     "effect": "^3.21.2",
@@ -43,5 +59,8 @@
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": "oxlint --fix",
     "*.{ts,tsx,js,jsx,json,jsonc,md,yaml,yml,toml}": "oxfmt"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

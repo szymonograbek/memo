@@ -1,4 +1,4 @@
-import { BunContext } from "@effect/platform-bun"
+import { NodeContext } from "@effect/platform-node"
 import { Effect, Layer, ManagedRuntime } from "effect"
 
 import { InfraLive, EmbedderInfra } from "../../src/app/layers.ts"
@@ -10,14 +10,14 @@ import { TestEnv } from "./env.ts"
 
 /**
  * Heavy infrastructure shared across tests: in-memory libSQL + migrations +
- * transformers embedder + Bun platform services. One ManagedRuntime per
+ * transformers embedder + Node platform services. One ManagedRuntime per
  * test process so the embedder pipeline loads once.
  *
  * MemoryService is layered per-test because it depends on the workspace's
  * filesystem paths; layering it here would tie the runtime to a single
  * workspace.
  */
-const HeavyInfra = Layer.mergeAll(InfraLive, EmbedderInfra, BunContext.layer).pipe(
+const HeavyInfra = Layer.mergeAll(InfraLive, EmbedderInfra, NodeContext.layer).pipe(
   Layer.provide(TestEnv),
 )
 

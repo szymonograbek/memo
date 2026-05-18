@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 
-import { BunContext } from "@effect/platform-bun"
+import { NodeContext } from "@effect/platform-node"
 import { Effect, Exit, Layer } from "effect"
 
 import { MemoryService } from "../src/memory/service.ts"
@@ -57,7 +57,7 @@ export const makeWorkspace = (label: string): Workspace => {
 // (e.g. malformed template files), so it joins the effect's error channel.
 const memoryLayer = (workspace: Workspace) =>
   MemoryService.layer({ rootDir: workspace.rootDir, templateDirs: [workspace.templateDir] }).pipe(
-    Layer.provide(BunContext.layer),
+    Layer.provide(NodeContext.layer),
   )
 
 const provideMemory = <A, E>(

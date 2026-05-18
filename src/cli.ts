@@ -1,7 +1,7 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { Args, Command, Options } from "@effect/cli"
 import { FileSystem } from "@effect/platform"
-import { BunContext, BunRuntime } from "@effect/platform-bun"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
 import { Console, Effect, Layer, Option } from "effect"
 
 import { EmbedderInfra, InfraLive } from "./app/layers.ts"
@@ -365,4 +365,4 @@ const command = Command.make("memo").pipe(
 Command.run(command, {
   name: "memo",
   version: "0.1.0",
-})(process.argv).pipe(Effect.provide(BunContext.layer), BunRuntime.runMain)
+})(process.argv).pipe(Effect.provide(NodeContext.layer), NodeRuntime.runMain)

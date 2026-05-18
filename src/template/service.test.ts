@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test"
 
-import { BunContext } from "@effect/platform-bun"
+import { NodeContext } from "@effect/platform-node"
 import { Cause, Effect, Exit, Option } from "effect"
 
 import { bookTemplate, makeWorkspace, noteTemplate } from "../../test/helpers.ts"
@@ -220,7 +220,7 @@ body: |
     )
 
     const templates = await Effect.runPromise(
-      loadTemplates([ws.templateDir]).pipe(Effect.provide(BunContext.layer)),
+      loadTemplates([ws.templateDir]).pipe(Effect.provide(NodeContext.layer)),
     )
 
     expect([...templates.keys()].sort()).toEqual(["book", "full", "note"])
@@ -244,7 +244,7 @@ body: |
     ws.writeTemplate("broken", "type: book\nfrontmatter: not-a-struct")
 
     const exit = await Effect.runPromiseExit(
-      loadTemplates([ws.templateDir]).pipe(Effect.provide(BunContext.layer)),
+      loadTemplates([ws.templateDir]).pipe(Effect.provide(NodeContext.layer)),
     )
 
     expect(Exit.isFailure(exit)).toBe(true)
@@ -278,7 +278,7 @@ body: ""
     )
 
     const exit = await Effect.runPromiseExit(
-      loadTemplates([ws.templateDir]).pipe(Effect.provide(BunContext.layer)),
+      loadTemplates([ws.templateDir]).pipe(Effect.provide(NodeContext.layer)),
     )
 
     expect(Exit.isFailure(exit)).toBe(true)
