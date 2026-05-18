@@ -190,6 +190,78 @@ describe("MemoryService.list / latest / query / values / find", () => {
     expect(notes.map((n) => n.path)).toEqual(["books/b.md", "books/c.md", "books/a.md"])
   })
 
+  it("latest falls back to 'date' field when both 'updatedAt' and 'updated' are absent", async () => {
+    const ws = makeWorkspace("latest-date-fallback")
+
+    seedTemplates(ws)
+    ws.writeNote(
+      "books/a.md",
+      [
+        "---",
+        "type: book",
+        'title: "a"',
+        'slug: "a"',
+        'id: "id-a"',
+        'createdAt: "2024-01-01"',
+        'date: "2024-03-01"',
+        "recalledTimes: 0",
+        "lastRecalledAt: null",
+        "---",
+        "# Body",
+      ].join("\n"),
+    )
+    writeBook(ws, "b", { updatedAt: "2024-01-01" })
+
+    const notes = await runMemory(
+      ws,
+      Effect.gen(function* () {
+        const memory = yield* MemoryService
+
+        return yield* memory.latest(undefined, 10, 0)
+      }),
+    )
+
+    // 'a' has date=2024-03-01 which is newer than b's updatedAt=2024-01-01
+    expect(notes[0]?.path).toBe("books/a.md")
+  })
+
+  it("latest falls back to 'updated' field when 'updatedAt' is absent", async () => {
+    const ws = makeWorkspace("latest-updated-fallback")
+
+    seedTemplates(ws)
+    // Write a note that uses 'updated' instead of 'updatedAt' — the field the
+    // implementation falls back to in noteTime().
+    ws.writeNote(
+      "books/a.md",
+      [
+        "---",
+        "type: book",
+        'title: "a"',
+        'slug: "a"',
+        'id: "id-a"',
+        'createdAt: "2024-01-01"',
+        'updated: "2024-03-01"',
+        "recalledTimes: 0",
+        "lastRecalledAt: null",
+        "---",
+        "# Body",
+      ].join("\n"),
+    )
+    writeBook(ws, "b", { updatedAt: "2024-01-01" })
+
+    const notes = await runMemory(
+      ws,
+      Effect.gen(function* () {
+        const memory = yield* MemoryService
+
+        return yield* memory.latest(undefined, 10, 0)
+      }),
+    )
+
+    // 'a' has updated=2024-03-01 which is newer than b's updatedAt=2024-01-01
+    expect(notes[0]?.path).toBe("books/a.md")
+  })
+
   it("queries by exact frontmatter field value (case-insensitive)", async () => {
     const ws = makeWorkspace("query")
 
@@ -206,6 +278,31 @@ describe("MemoryService.list / latest / query / values / find", () => {
       }),
     )
 
+    expect(notes.map((n) => n.path)).toEqual(["books/a.md"])
+  })
+
+  it("query filters by type when type is provided", async () => {
+    const ws = makeWorkspace("query-type")
+
+    seedTemplates(ws)
+    writeBook(ws, "a", { tags: ["sci-fi"] })
+    // A note that also carries tags — extra frontmatter fields beyond the
+    // template's required set are preserved by normalizeFrontmatter.
+    ws.writeNote(
+      "notes/b.md",
+      ["---", "type: note", 'title: "b"', 'slug: "b"', 'tags: ["sci-fi"]', "---", "# b"].join("\n"),
+    )
+
+    const notes = await runMemory(
+      ws,
+      Effect.gen(function* () {
+        const memory = yield* MemoryService
+
+        return yield* memory.query("tags", "sci-fi", 10, 0, "book")
+      }),
+    )
+
+    // Only the book should appear; the note with the same tag is filtered out.
     expect(notes.map((n) => n.path)).toEqual(["books/a.md"])
   })
 
@@ -331,6 +428,46 @@ describe("MemoryService.recall / patch", () => {
 
     expect(Exit.isFailure(exit)).toBe(true)
   })
+
+  it("patch stamps updatedAt when frontmatter is supplied", async () => {
+    const ws = makeWorkspace("patch-updatedAt")
+
+    seedTemplates(ws)
+    writeBook(ws, "dune", { updatedAt: "2020-01-01" })
+
+    const patched = await runMemory(
+      ws,
+      Effect.gen(function* () {
+        const memory = yield* MemoryService
+
+        return yield* memory.patch("books/dune.md", { title: "Dune Revised" }, undefined)
+      }),
+    )
+
+    // updatedAt must be refreshed — leaving it as the original value would
+    // silently corrupt the sort order and the note's modification history.
+    expect(patched.frontmatter.updatedAt).not.toBe("2020-01-01")
+    expect(typeof patched.frontmatter.updatedAt).toBe("string")
+  })
+
+  it("recall fails when the path does not exist on disk", async () => {
+    const ws = makeWorkspace("recall-missing")
+
+    seedTemplates(ws)
+
+    const exit = await runMemoryExit(
+      ws,
+      Effect.gen(function* () {
+        const memory = yield* MemoryService
+
+        return yield* memory.recall("books/nope.md")
+      }),
+    )
+
+    // Filesystem errors for non-existent paths surface as defects, not typed
+    // errors, because callers are expected to pass valid paths.
+    expect(Exit.isFailure(exit)).toBe(true)
+  })
 })
 
 describe("MemoryService.links", () => {
@@ -401,5 +538,38 @@ describe("MemoryService.links", () => {
     )
 
     expect(Exit.isFailure(exit)).toBe(true)
+  })
+
+  it("records a link as ambiguous when its target basename matches multiple notes", async () => {
+    const ws = makeWorkspace("links-ambiguous")
+
+    seedTemplates(ws)
+    // 'source' links to [[dune]] which matches both books/dune and notes/dune.
+    writeBook(ws, "source", {}, "References [[dune]].")
+    writeBook(ws, "dune")
+    // A second note with the same basename under a different directory.
+    ws.writeNote(
+      "notes/dune.md",
+      ["---", "type: note", 'title: "dune"', 'slug: "dune"', "---", "# dune"].join("\n"),
+    )
+
+    const result = await runMemory(
+      ws,
+      Effect.gen(function* () {
+        const memory = yield* MemoryService
+
+        return yield* memory.links(undefined)
+      }),
+    )
+
+    if (!(result instanceof LinkGraph)) throw new Error("expected LinkGraph")
+
+    const ambiguous = result.unresolved.filter((u) => u.ambiguous !== null)
+
+    expect(ambiguous.length).toBeGreaterThan(0)
+
+    const candidates = ambiguous[0]!.ambiguous!.slice().sort()
+
+    expect(candidates).toEqual(["books/dune", "notes/dune"])
   })
 })

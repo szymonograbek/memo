@@ -36,7 +36,7 @@ describe("Embedder (transformers)", () => {
     expect(e.dim).toBe(384)
   })
 
-  test("embedMany preserves order and length", async () => {
+  test("embedMany length and dimensions", async () => {
     const out = await runTest(
       Effect.gen(function* () {
         const emb = yield* Embedder
@@ -52,6 +52,34 @@ describe("Embedder (transformers)", () => {
     expect(out).toHaveLength(3)
 
     for (const e of out) expect(e.vector.length).toBe(e.dim)
+  })
+
+  test("embedMany returns vectors in input order (matches individual embeds)", async () => {
+    // If the implementation scrambled results, batch[i] would diverge from
+    // the individually-embedded vector for the same text at position i.
+    const result = await runTest(
+      Effect.gen(function* () {
+        const emb = yield* Embedder
+
+        const inputs = [
+          { text: "alpha", kind: "passage" as const },
+          { text: "beta", kind: "passage" as const },
+          { text: "gamma", kind: "query" as const },
+        ]
+
+        const batch = yield* emb.embedMany(inputs)
+        const singles = yield* Effect.all(inputs.map((t) => emb.embed(t)))
+
+        return { batch, singles }
+      }),
+    )
+
+    const maxAbsDiff = (a: ReadonlyArray<number>, b: ReadonlyArray<number>) =>
+      Math.max(...a.map((x, i) => Math.abs(x - b[i]!)))
+
+    for (let i = 0; i < result.batch.length; i++) {
+      expect(maxAbsDiff(result.batch[i]!.vector, result.singles[i]!.vector)).toBeLessThan(1e-5)
+    }
   })
 
   test("semantic recall: 40px button query is closer to design-tokens than to dog-walking", async () => {

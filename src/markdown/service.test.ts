@@ -46,6 +46,12 @@ describe("normalizeFrontmatter", () => {
 
     expect(result.updatedAt).toBe("2024-05-01")
   })
+
+  it("falls back to 'updated' when 'updatedAt' is absent", () => {
+    const result = normalizeFrontmatter({ title: "Dune", updated: "2024-05-01" })
+
+    expect(result.updatedAt).toBe("2024-05-01")
+  })
 })
 
 describe("decodeMarkdown / encodeMarkdown", () => {
